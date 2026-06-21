@@ -10,6 +10,18 @@ class Course(models.Model):
     )
     description: models.TextField = models.TextField(verbose_name="Описание курса")
 
+    class Meta:
+        """Класс настроек отображения"""
+
+        verbose_name = "Курс"
+        verbose_name_plural = "Курсы"
+        ordering = ["name"]
+
+    def __str__(self) -> str:
+        """Строковое отображение объекта курса"""
+
+        return str(self.name)
+
 
 class Lesson(models.Model):
     """Модель урока"""
@@ -23,3 +35,15 @@ class Lesson(models.Model):
     course: models.ForeignKey = models.ForeignKey(
         Course, on_delete=models.CASCADE, related_name="lessons", verbose_name="Курс"
     )
+
+    class Meta:
+        """Класс настроек отображения"""
+
+        verbose_name = "Урок"
+        verbose_name_plural = "Уроки"
+        ordering = ["name"]
+
+    def __str__(self) -> str:
+        """Строковое отображение объекта урока"""
+
+        return str(self.name)
