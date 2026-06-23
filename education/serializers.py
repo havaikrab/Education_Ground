@@ -1,6 +1,6 @@
 from rest_framework.serializers import ModelSerializer, SerializerMethodField
 
-from .models import Course, Lesson
+from .models import Course, Lesson, Payment
 
 
 class LessonSerializer(ModelSerializer):
@@ -29,3 +29,13 @@ class CourseSerializer(ModelSerializer):
         """Получение количества уроков в текущем курсе"""
 
         return course.lessons.count()  # type: ignore
+
+
+class PaymentSerializer(ModelSerializer):
+    """Сериализатор модели платежа"""
+
+    class Meta:
+        """Параметры сериализатора"""
+
+        model = Payment
+        fields = "__all__"
