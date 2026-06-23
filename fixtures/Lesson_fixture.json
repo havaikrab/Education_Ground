@@ -1,0 +1,35 @@
+[
+{
+    "model": "education.lesson",
+    "pk": 1,
+    "fields": {
+        "name": "Исправленное имя урока",
+        "description": "Описание урока",
+        "preview": "",
+        "link_to_video": null,
+        "course": 1
+    }
+},
+{
+    "model": "education.lesson",
+    "pk": 3,
+    "fields": {
+        "name": "урок 22",
+        "description": "Описание урока 22",
+        "preview": "",
+        "link_to_video": null,
+        "course": 1
+    }
+},
+{
+    "model": "education.lesson",
+    "pk": 4,
+    "fields": {
+        "name": "урок 25",
+        "description": "Описание урока 25",
+        "preview": "",
+        "link_to_video": null,
+        "course": 3
+    }
+}
+]
