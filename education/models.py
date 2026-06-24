@@ -14,6 +14,14 @@ class Course(models.Model):
         upload_to="courses_previews", verbose_name="Превью курса", blank=True, null=True
     )
     description: models.TextField = models.TextField(verbose_name="Описание курса")
+    owner: models.ForeignKey = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name="own_courses",
+        verbose_name="Владелец",
+        null=True,
+        blank=False,
+    )
 
     class Meta:
         """Класс настроек отображения"""
@@ -39,6 +47,14 @@ class Lesson(models.Model):
     link_to_video: models.URLField = models.URLField(verbose_name="Ссылка на видео", blank=True, null=True)
     course: models.ForeignKey = models.ForeignKey(
         Course, on_delete=models.CASCADE, related_name="lessons", verbose_name="Курс"
+    )
+    owner: models.ForeignKey = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name="own_lessons",
+        verbose_name="Владелец",
+        null=True,
+        blank=False,
     )
 
     class Meta:
