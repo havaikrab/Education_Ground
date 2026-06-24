@@ -1,4 +1,5 @@
 from rest_framework.generics import CreateAPIView
+from rest_framework.permissions import AllowAny
 from rest_framework.viewsets import ModelViewSet
 
 from .models import CustomUser
@@ -9,6 +10,7 @@ class CustomUserRegisterAPIView(CreateAPIView):
     """Контроллер регистрации нового пользователя"""
 
     serializer_class = CustomUserRegisterSerializer
+    permission_classes = [AllowAny]
 
 
 class CustomUserViewSet(ModelViewSet):
