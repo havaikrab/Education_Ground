@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from .apps import UsersConfig
-from .views import CustomUserRegisterAPIView, CustomUserViewSet
+from .views import CustomUserChangePasswordAPIView, CustomUserRegisterAPIView, CustomUserViewSet
 
 app_name = UsersConfig.name
 
@@ -14,5 +14,6 @@ urlpatterns: list = [
     path("register/", CustomUserRegisterAPIView.as_view(), name="register"),
     path("login/", TokenObtainPairView.as_view(), name="login"),
     path("token_refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("change_password/", CustomUserChangePasswordAPIView.as_view(), name="change_password"),
 ]
 urlpatterns += router.urls
