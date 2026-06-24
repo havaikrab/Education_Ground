@@ -159,6 +159,24 @@ argon2 = ["argon2-cffi (>=23.1.0)"]
 bcrypt = ["bcrypt (>=4.1.1)"]
 
 [[package]]
+name = "django-filter"
+version = "25.2"
+description = "Django-filter is a reusable Django application for allowing users to filter querysets dynamically."
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "django_filter-25.2-py3-none-any.whl", hash = "sha256:9c0f8609057309bba611062fe1b720b4a873652541192d232dd28970383633e3"},
+    {file = "django_filter-25.2.tar.gz", hash = "sha256:760e984a931f4468d096f5541787efb8998c61217b73006163bf2f9523fe8f23"},
+]
+
+[package.dependencies]
+Django = ">=5.2"
+
+[package.extras]
+drf = ["djangorestframework"]
+
+[[package]]
 name = "django-stubs"
 version = "6.0.5"
 description = "Mypy stubs for Django"
@@ -801,6 +819,21 @@ dev = ["build"]
 doc = ["sphinx"]
 
 [[package]]
+name = "types-django-filter"
+version = "25.2.0.20260508"
+description = "Typing stubs for django-filter"
+optional = false
+python-versions = ">=3.10"
+groups = ["lint"]
+files = [
+    {file = "types_django_filter-25.2.0.20260508-py3-none-any.whl", hash = "sha256:8f76ec516a10b8e8d2d363015b95a474899001664718b6ebf51c929f3514016e"},
+    {file = "types_django_filter-25.2.0.20260508.tar.gz", hash = "sha256:7798d6bf8c953d888cb846c5041ffa012f770bb335e6ddb3ac76d1fc01e03a20"},
+]
+
+[package.dependencies]
+django-stubs = "*"
+
+[[package]]
 name = "types-pyyaml"
 version = "6.0.12.20260518"
 description = "Typing stubs for PyYAML"
@@ -840,4 +873,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13"
-content-hash = "a3a1444ccd335ca3998bc6236b0b5e8c4d45001052019c6c9fd193595f6530f7"
+content-hash = "8d33386f762fc70d16caed6535f041e056890b6936e38498cbb2f02892b74b73"

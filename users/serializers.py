@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from education.serializers import PaymentSerializer
+
 from .models import CustomUser
 
 
@@ -45,8 +47,10 @@ class CustomUserRegisterSerializer(serializers.ModelSerializer):
 class CustomUserSerializer(serializers.ModelSerializer):
     """Сериализатор модели пользователя"""
 
+    payments = PaymentSerializer(many=True, read_only=True)
+
     class Meta:
         """Параметры сериализатора"""
 
         model = CustomUser
-        fields = ("username", "email", "first_name", "last_name", "phone", "city", "avatar")
+        fields = ("username", "email", "first_name", "last_name", "phone", "city", "avatar", "payments")

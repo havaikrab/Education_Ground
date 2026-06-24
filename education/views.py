@@ -1,8 +1,9 @@
 from rest_framework import generics
 from rest_framework.viewsets import ModelViewSet
 
-from .models import Course, Lesson
-from .serializers import CourseSerializer, LessonSerializer
+from .filters import PaymentFilterSet
+from .models import Course, Lesson, Payment
+from .serializers import CourseSerializer, LessonSerializer, PaymentSerializer
 
 
 class CourseViewSet(ModelViewSet):
@@ -44,3 +45,11 @@ class LessonDestroyAPIView(generics.DestroyAPIView):
 
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
+
+
+class PaymentListAPIView(generics.ListAPIView):
+    """Контроллер списка платежей"""
+
+    queryset = Payment.objects.all()
+    serializer_class = PaymentSerializer
+    filterset_class = PaymentFilterSet
