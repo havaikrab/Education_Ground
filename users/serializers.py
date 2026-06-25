@@ -57,6 +57,15 @@ class CustomUserSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ("username", "email", "first_name", "last_name", "phone", "city", "avatar", "payments")
 
+    def to_representation(self, instance: CustomUser) -> dict:
+
+        data = super().to_representation(instance)
+        user = self.context["request"].user
+        if instance != user:
+            data.pop("last_name")
+            data.pop("payments")
+        return data
+
 
 class CustomUserChangePasswordSerializer(serializers.ModelSerializer):
     """Сериализатор обновления пароля от аккаунта"""

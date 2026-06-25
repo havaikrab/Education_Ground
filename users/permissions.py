@@ -47,3 +47,14 @@ class IsModeratorOrLessonOwner(BasePermission):
             is_owner = obj.course.owner == user
             return is_owner or is_moderator
         return False
+
+
+class IsOwnAccount(BasePermission):
+    """Разрешение на работу с собственным аккаунтом"""
+
+    message = "Действие не доступно для данного аккаунта"
+
+    def has_object_permission(self, request: Request, view: APIView, obj: CustomUser) -> bool:
+        """Проверка, является ли объект модели CustomUser профилем авторизованного пользователя"""
+
+        return request.user == obj

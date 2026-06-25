@@ -2,13 +2,14 @@ from typing import Any
 
 from rest_framework import status
 from rest_framework.generics import CreateAPIView
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from .models import CustomUser
+from .permissions import IsOwnAccount
 from .serializers import CustomUserChangePasswordSerializer, CustomUserRegisterSerializer, CustomUserSerializer
 
 
@@ -25,6 +26,11 @@ class CustomUserViewSet(ModelViewSet):
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
     http_method_names = ["get", "put", "patch", "delete"]
+
+    def get_permissions(self) -> list:
+        if self.action in ["destroy", "update", "partial_update"]:
+            return [IsAuthenticated(), IsOwnAccount()]
+        return [IsAuthenticated()]
 
 
 class CustomUserChangePasswordAPIView(APIView):
