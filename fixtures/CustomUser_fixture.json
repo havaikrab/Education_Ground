@@ -24,8 +24,8 @@
     "model": "users.customuser",
     "pk": 2,
     "fields": {
-        "password": "pbkdf2_sha256$1200000$mp1mu8GdbiLxGGqVsqcoj2$tn0pV8dtr4io7fLWATHE+hdUSJi4lWNJD0X87yU9gYw=",
-        "last_login": "2026-06-21T10:48:43.422Z",
+        "password": "pbkdf2_sha256$1200000$nZjlGDk9apUIEICiPLQvad$VgL8AfvkvWh0Xry6x6XuvyBVqWa4UNkWS00w5Q4bUdE=",
+        "last_login": "2026-06-24T15:31:38.005Z",
         "is_superuser": true,
         "username": "qwert",
         "is_staff": true,
@@ -38,6 +38,113 @@
         "city": null,
         "avatar": "",
         "groups": [],
+        "user_permissions": []
+    }
+},
+{
+    "model": "users.customuser",
+    "pk": 5,
+    "fields": {
+        "password": "pbkdf2_sha256$1200000$oVzFOlDyt3OU7Yv5hBiRMD$+TZV5VFyZXXX3boGTIehlWUT5+TXAwOEA5maL8gIKws=",
+        "last_login": null,
+        "is_superuser": false,
+        "username": "5user1",
+        "is_staff": false,
+        "is_active": true,
+        "date_joined": "2026-06-21T06:42:51.055Z",
+        "email": "5qwert@sdvs.sds",
+        "first_name": "user1",
+        "last_name": "userov1",
+        "phone": "123451",
+        "city": null,
+        "avatar": "",
+        "groups": [],
+        "user_permissions": []
+    }
+},
+{
+    "model": "users.customuser",
+    "pk": 6,
+    "fields": {
+        "password": "pbkdf2_sha256$1200000$mp1mu8GdbiLxGGqVsqcoj2$tn0pV8dtr4io7fLWATHE+hdUSJi4lWNJD0X87yU9gYw=",
+        "last_login": "2026-06-21T10:48:43.422Z",
+        "is_superuser": true,
+        "username": "6qwert",
+        "is_staff": true,
+        "is_active": true,
+        "date_joined": "2026-06-21T10:48:25.953Z",
+        "email": "6super@user.py",
+        "first_name": "",
+        "last_name": "",
+        "phone": null,
+        "city": null,
+        "avatar": "",
+        "groups": [],
+        "user_permissions": []
+    }
+},
+{
+    "model": "users.customuser",
+    "pk": 7,
+    "fields": {
+        "password": "pbkdf2_sha256$1200000$5HoCXItIGl3HsFu5J0RXsA$Q7Qc876fyGJimRY+VQMbu40ptOulQ0hV7oeccHHYK1I=",
+        "last_login": null,
+        "is_superuser": false,
+        "username": "qwert123",
+        "is_staff": false,
+        "is_active": true,
+        "date_joined": "2026-06-24T03:52:51.298Z",
+        "email": "qwe@rty.uio",
+        "first_name": "qaz",
+        "last_name": "asd",
+        "phone": null,
+        "city": null,
+        "avatar": "",
+        "groups": [],
+        "user_permissions": []
+    }
+},
+{
+    "model": "users.customuser",
+    "pk": 8,
+    "fields": {
+        "password": "pbkdf2_sha256$1200000$ycVpD6ZclNVXN8LWiMiEKw$Yq4HLXqJl68lrizcJ2kHn8p8S5PR77sF5gDPF1xKgCQ=",
+        "last_login": null,
+        "is_superuser": false,
+        "username": "rfv",
+        "is_staff": false,
+        "is_active": true,
+        "date_joined": "2026-06-24T07:28:57.956Z",
+        "email": "rfv@tgb.yhn",
+        "first_name": "rfv",
+        "last_name": "tgb",
+        "phone": null,
+        "city": null,
+        "avatar": "",
+        "groups": [],
+        "user_permissions": []
+    }
+},
+{
+    "model": "users.customuser",
+    "pk": 9,
+    "fields": {
+        "password": "pbkdf2_sha256$1200000$6iz2sfSy4usZ7pTaTNTEWE$89Yu7nErFfBdNvZ5YeQpKmOBqQTmBZXg3qGhBJXV7K0=",
+        "last_login": null,
+        "is_superuser": false,
+        "username": "qwertxxx",
+        "is_staff": false,
+        "is_active": true,
+        "date_joined": "2026-06-24T16:10:58Z",
+        "email": "moderator_1@django.py",
+        "first_name": "first_name",
+        "last_name": "last_name",
+        "phone": null,
+        "city": null,
+        "avatar": "",
+        "groups": [
+            1
+        ],
         "user_permissions": []
     }
 }

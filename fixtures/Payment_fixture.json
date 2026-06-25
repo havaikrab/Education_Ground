@@ -94,5 +94,17 @@
         "amount": 222,
         "method": "cash"
     }
+},
+{
+    "model": "education.payment",
+    "pk": 9,
+    "fields": {
+        "payer": 2,
+        "created_at": "2026-06-22T17:41:26.793Z",
+        "paid_course": null,
+        "paid_lesson": 1,
+        "amount": 222,
+        "method": "cashless"
+    }
 }
 ]

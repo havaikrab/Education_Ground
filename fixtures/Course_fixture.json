@@ -5,7 +5,8 @@
     "fields": {
         "name": "qfgnd",
         "preview": "",
-        "description": "Исправление курса"
+        "description": "Исправление курса",
+        "owner": null
     }
 },
 {
@@ -14,7 +15,8 @@
     "fields": {
         "name": "Дополнительный курс",
         "preview": "",
-        "description": "Описание дополнительного курса"
+        "description": "Описание дополнительного курса",
+        "owner": null
     }
 },
 {
@@ -23,7 +25,88 @@
     "fields": {
         "name": "qaw",
         "preview": "",
-        "description": "Исправление курса"
+        "description": "Исправление курса",
+        "owner": null
+    }
+},
+{
+    "model": "education.course",
+    "pk": 5,
+    "fields": {
+        "name": "Курс от супера",
+        "preview": "",
+        "description": "ОписААние",
+        "owner": null
+    }
+},
+{
+    "model": "education.course",
+    "pk": 6,
+    "fields": {
+        "name": "Курс от модера",
+        "preview": "",
+        "description": "Создал супер, изменил модер",
+        "owner": null
+    }
+},
+{
+    "model": "education.course",
+    "pk": 7,
+    "fields": {
+        "name": "12345",
+        "preview": "",
+        "description": "12345",
+        "owner": 9
+    }
+},
+{
+    "model": "education.course",
+    "pk": 9,
+    "fields": {
+        "name": "12345",
+        "preview": "",
+        "description": "12345",
+        "owner": 9
+    }
+},
+{
+    "model": "education.course",
+    "pk": 10,
+    "fields": {
+        "name": "12345qwe",
+        "preview": "",
+        "description": "12345qwe",
+        "owner": 9
+    }
+},
+{
+    "model": "education.course",
+    "pk": 11,
+    "fields": {
+        "name": "qazwsx",
+        "preview": "",
+        "description": "qazwsx",
+        "owner": 9
+    }
+},
+{
+    "model": "education.course",
+    "pk": 12,
+    "fields": {
+        "name": "qazcsd",
+        "preview": "",
+        "description": "qzxc",
+        "owner": 2
+    }
+},
+{
+    "model": "education.course",
+    "pk": 13,
+    "fields": {
+        "name": "qasngnsfgnd",
+        "preview": "",
+        "description": "gnsgngn",
+        "owner": 9
     }
 }
 ]
