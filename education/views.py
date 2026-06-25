@@ -6,7 +6,7 @@ from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import ModelViewSet
 
 from users.models import CustomUser
-from users.permissions import CoursesPermissions
+from users.permissions import CoursesPermissions, IsModeratorOrLessonOwner
 
 from .filters import PaymentFilterSet
 from .models import Course, Lesson, Payment
@@ -41,8 +41,7 @@ class LessonCreateAPIView(generics.CreateAPIView):
     serializer_class = LessonSerializer
 
     def perform_create(self, serializer: BaseSerializer) -> None:
-        """Ограничение модераторам создавать собственные уроки и
-        указание авторизованного пользователя владельцем создаваемого урока"""
+        """Ограничение модераторам создавать собственные уроки и запрет создавать уроки для чужих курсов"""
 
         user = self.request.user
         if isinstance(user, CustomUser):
@@ -60,12 +59,21 @@ class LessonListAPIView(generics.ListAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
 
+    def get_queryset(self) -> QuerySet:
+        """Определение списка объектов для отображения"""
+
+        user = self.request.user
+        if isinstance(user, CustomUser) and user.groups.filter(name="Модераторы").exists():
+            return Lesson.objects.all()
+        return Lesson.objects.filter(course__owner=user)
+
 
 class LessonRetrieveAPIView(generics.RetrieveAPIView):
     """Контроллер объекта урока"""
 
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
+    permission_classes = [IsModeratorOrLessonOwner]
 
 
 class LessonUpdateAPIView(generics.UpdateAPIView):
@@ -73,6 +81,7 @@ class LessonUpdateAPIView(generics.UpdateAPIView):
 
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
+    permission_classes = [IsModeratorOrLessonOwner]
 
 
 class LessonDestroyAPIView(generics.DestroyAPIView):
@@ -80,6 +89,16 @@ class LessonDestroyAPIView(generics.DestroyAPIView):
 
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
+
+    def perform_destroy(self, instance: Lesson) -> None:
+        """Ограничение доступа на удаление объекта всем кроме его владельца"""
+
+        user = self.request.user
+        if not instance.course.owner == user:
+            raise PermissionDenied("Запрещено удалять чужие уроки")
+        if isinstance(user, CustomUser) and user.groups.filter(name="Модераторы").exists():
+            raise PermissionDenied("Модераторам запрещено удалять уроки")
+        instance.delete()
 
 
 class PaymentListAPIView(generics.ListAPIView):

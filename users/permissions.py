@@ -23,11 +23,27 @@ class CoursesPermissions(BasePermission):
         return False
 
     def has_object_permission(self, request: Request, view: APIView, obj: Course) -> bool:
-        """Проверка, является ли авторизованный пользователь владельцем объекта представления"""
+        """Проверка, является ли авторизованный пользователь владельцем объекта представления или модератором"""
 
         user = request.user
         if isinstance(user, CustomUser):
             is_moderator = user.groups.filter(name="Модераторы").exists()
             is_owner = obj.owner == user
+            return is_owner or is_moderator
+        return False
+
+
+class IsModeratorOrLessonOwner(BasePermission):
+    """Описание прав на работу с объектами модели Lesson"""
+
+    message = "Доступ ограничен."
+
+    def has_object_permission(self, request: Request, view: APIView, obj: Lesson) -> bool:
+        """Проверка, является ли авторизованный пользователь владельцем объекта представления или модератором"""
+
+        user = request.user
+        if isinstance(user, CustomUser):
+            is_moderator = user.groups.filter(name="Модераторы").exists()
+            is_owner = obj.course.owner == user
             return is_owner or is_moderator
         return False
