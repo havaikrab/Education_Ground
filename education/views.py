@@ -1,5 +1,11 @@
+from django.db.models import QuerySet
 from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import ModelViewSet
+
+from users.models import CustomUser
+from users.permissions import CoursesPermissions
 
 from .filters import PaymentFilterSet
 from .models import Course, Lesson, Payment
@@ -11,6 +17,21 @@ class CourseViewSet(ModelViewSet):
 
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
+    permission_classes = [IsAuthenticated, CoursesPermissions]
+
+    def get_queryset(self) -> QuerySet:
+        """Определение списка объектов для отображения"""
+
+        user = self.request.user
+        if isinstance(user, CustomUser) and user.groups.filter(name="Модераторы").exists():
+            return Course.objects.all()
+        return Course.objects.filter(owner=user)
+
+    def perform_create(self, serializer: BaseSerializer) -> None:
+        """Указание авторизованного пользователя владельцем создаваемого курса"""
+
+        user = self.request.user
+        serializer.save(owner=user)
 
 
 class LessonCreateAPIView(generics.CreateAPIView):
