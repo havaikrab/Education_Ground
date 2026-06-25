@@ -17,7 +17,7 @@ class Course(models.Model):
     owner: models.ForeignKey = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,
-        related_name="own_courses",
+        related_name="courses",
         verbose_name="Владелец",
         null=True,
         blank=False,
@@ -47,14 +47,6 @@ class Lesson(models.Model):
     link_to_video: models.URLField = models.URLField(verbose_name="Ссылка на видео", blank=True, null=True)
     course: models.ForeignKey = models.ForeignKey(
         Course, on_delete=models.CASCADE, related_name="lessons", verbose_name="Курс"
-    )
-    owner: models.ForeignKey = models.ForeignKey(
-        CustomUser,
-        on_delete=models.CASCADE,
-        related_name="own_lessons",
-        verbose_name="Владелец",
-        null=True,
-        blank=False,
     )
 
     class Meta:

@@ -1,3 +1,4 @@
+from django.core.exceptions import PermissionDenied
 from django.db.models import QuerySet
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
@@ -38,6 +39,19 @@ class LessonCreateAPIView(generics.CreateAPIView):
     """Контроллер создания объекта урока"""
 
     serializer_class = LessonSerializer
+
+    def perform_create(self, serializer: BaseSerializer) -> None:
+        """Ограничение модераторам создавать собственные уроки и
+        указание авторизованного пользователя владельцем создаваемого урока"""
+
+        user = self.request.user
+        if isinstance(user, CustomUser):
+            if user.groups.filter(name="Модераторы").exists():
+                raise PermissionDenied("Модераторам запрещено создавать собственные уроки")
+            course = serializer.validated_data.get("course")
+            if course not in user.courses.all():  # type: ignore
+                raise PermissionDenied("Запрещено создавать уроки для чужих курсов")
+            serializer.save()
 
 
 class LessonListAPIView(generics.ListAPIView):
