@@ -3,10 +3,10 @@
     "model": "education.course",
     "pk": 1,
     "fields": {
-        "name": "qfgnd",
+        "name": "Устареший",
         "preview": "",
-        "description": "Исправление курса",
-        "owner": null
+        "description": "12й12345",
+        "owner": 2
     }
 },
 {
@@ -107,6 +107,16 @@
         "preview": "",
         "description": "gnsgngn",
         "owner": 9
+    }
+},
+{
+    "model": "education.course",
+    "pk": 15,
+    "fields": {
+        "name": "ddddddddd",
+        "preview": "",
+        "description": "gggggggg",
+        "owner": 2
     }
 }
 ]

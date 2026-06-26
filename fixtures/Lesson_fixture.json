@@ -34,17 +34,6 @@
 },
 {
     "model": "education.lesson",
-    "pk": 5,
-    "fields": {
-        "name": "12345",
-        "description": "12345",
-        "preview": "",
-        "link_to_video": null,
-        "course": 7
-    }
-},
-{
-    "model": "education.lesson",
     "pk": 6,
     "fields": {
         "name": "12345qwe",

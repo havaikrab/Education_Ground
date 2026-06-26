@@ -132,7 +132,7 @@
         "password": "pbkdf2_sha256$1200000$6iz2sfSy4usZ7pTaTNTEWE$89Yu7nErFfBdNvZ5YeQpKmOBqQTmBZXg3qGhBJXV7K0=",
         "last_login": null,
         "is_superuser": false,
-        "username": "qwertxxx",
+        "username": "qwertxxx123",
         "is_staff": false,
         "is_active": true,
         "date_joined": "2026-06-24T16:10:58Z",
