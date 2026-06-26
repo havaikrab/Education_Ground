@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from .models import CustomUser
-from .permissions import IsOwnAccount
+from .permissions import IsOwner
 from .serializers import CustomUserChangePasswordSerializer, CustomUserRegisterSerializer, CustomUserSerializer
 
 
@@ -29,7 +29,7 @@ class CustomUserViewSet(ModelViewSet):
 
     def get_permissions(self) -> list:
         if self.action in ["destroy", "update", "partial_update"]:
-            return [IsAuthenticated(), IsOwnAccount()]
+            return [IsAuthenticated(), IsOwner()]
         return [IsAuthenticated()]
 
 

@@ -6,55 +6,47 @@ from education.models import Course, Lesson
 from users.models import CustomUser
 
 
-class CoursesPermissions(BasePermission):
-    """Описание прав на работу с объектами модели Course"""
+class IsNotModerator(BasePermission):
+    """Разрешение для всех пользователей, кроме группы Модераторов"""
 
-    message = "Доступ ограничен."
+    message = "Доступ ограничен для группы Модераторов."
 
     def has_permission(self, request: Request, view: APIView) -> bool:
-        """Запрет модераторам создавать или удалять объекты модели Course"""
+        """Проверяет, является ли пользователь модератором"""
 
         user = request.user
         if isinstance(user, CustomUser):
-            is_moderator = user.groups.filter(name="Модераторы").exists()
-            if hasattr(view, "action") and view.action in ["create", "destroy"]:
-                return not is_moderator
+            return not user.groups.filter(name="Модераторы").exists()
+        return False
+
+
+class IsOwner(BasePermission):
+    """Разрешение для пользователя - владельца"""
+
+    message = "Доступ ограничен. Вы не являетесь владельцем объекта представления."
+
+    def has_object_permission(self, request: Request, view: APIView, obj: Course | Lesson | CustomUser) -> bool:
+        """Проверка, является ли авторизованный пользователь владельцем объекта представления"""
+
+        user = request.user
+        if isinstance(obj, CustomUser):
+            return bool(obj == user)
+        if isinstance(obj, Course):
+            return bool(obj.owner == user)
+        if isinstance(obj, Lesson):
+            return bool(obj.course.owner == user)
+        return False
+
+
+class IsModeratorOrOwner(IsOwner):
+    """Разрешение для группы пользователей Модераторы или владельца объекта представления"""
+
+    message = "Доступ ограничен. Вы должны быть модератором или владельцем объекта представления."
+
+    def has_object_permission(self, request: Request, view: APIView, obj: Course | Lesson | CustomUser) -> bool:
+        """Проверка, является ли авторизованный пользователь владельцем объекта представления или модератором"""
+
+        user = request.user
+        if isinstance(user, CustomUser) and user.groups.filter(name="Модераторы").exists():
             return True
-        return False
-
-    def has_object_permission(self, request: Request, view: APIView, obj: Course) -> bool:
-        """Проверка, является ли авторизованный пользователь владельцем объекта представления или модератором"""
-
-        user = request.user
-        if isinstance(user, CustomUser):
-            is_moderator = user.groups.filter(name="Модераторы").exists()
-            is_owner = obj.owner == user
-            return is_owner or is_moderator
-        return False
-
-
-class IsModeratorOrLessonOwner(BasePermission):
-    """Описание прав на работу с объектами модели Lesson"""
-
-    message = "Доступ ограничен."
-
-    def has_object_permission(self, request: Request, view: APIView, obj: Lesson) -> bool:
-        """Проверка, является ли авторизованный пользователь владельцем объекта представления или модератором"""
-
-        user = request.user
-        if isinstance(user, CustomUser):
-            is_moderator = user.groups.filter(name="Модераторы").exists()
-            is_owner = obj.course.owner == user
-            return is_owner or is_moderator
-        return False
-
-
-class IsOwnAccount(BasePermission):
-    """Разрешение на работу с собственным аккаунтом"""
-
-    message = "Действие не доступно для данного аккаунта"
-
-    def has_object_permission(self, request: Request, view: APIView, obj: CustomUser) -> bool:
-        """Проверка, является ли объект модели CustomUser профилем авторизованного пользователя"""
-
-        return request.user == obj
+        return super().has_object_permission(request, view, obj)
