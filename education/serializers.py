@@ -11,7 +11,6 @@ class LessonSerializer(ModelSerializer):
 
         model = Lesson
         fields = "__all__"
-        read_only_fields = ["course"]
 
 
 class CourseSerializer(ModelSerializer):
@@ -25,7 +24,6 @@ class CourseSerializer(ModelSerializer):
 
         model = Course
         fields = ["id", "name", "preview", "description", "owner", "lessons_count", "lessons_details"]
-        read_only_fields = ["owner"]
 
     def get_lessons_count(self, course: Course) -> int:
         """Получение количества уроков в текущем курсе"""

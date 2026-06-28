@@ -3,9 +3,9 @@
     "model": "education.course",
     "pk": 1,
     "fields": {
-        "name": "Устареший",
+        "name": "Уепинртгоьs444",
         "preview": "",
-        "description": "12й12345",
+        "description": "555",
         "owner": 2
     }
 },
@@ -61,16 +61,6 @@
 },
 {
     "model": "education.course",
-    "pk": 9,
-    "fields": {
-        "name": "12345",
-        "preview": "",
-        "description": "12345",
-        "owner": 9
-    }
-},
-{
-    "model": "education.course",
     "pk": 10,
     "fields": {
         "name": "12345qwe",
@@ -83,9 +73,9 @@
     "model": "education.course",
     "pk": 11,
     "fields": {
-        "name": "qazwsx",
+        "name": "Уепинртгоьsssssss",
         "preview": "",
-        "description": "qazwsx",
+        "description": "1wewef",
         "owner": 9
     }
 },
@@ -107,16 +97,6 @@
         "preview": "",
         "description": "gnsgngn",
         "owner": 9
-    }
-},
-{
-    "model": "education.course",
-    "pk": 15,
-    "fields": {
-        "name": "ddddddddd",
-        "preview": "",
-        "description": "gggggggg",
-        "owner": 2
     }
 }
 ]

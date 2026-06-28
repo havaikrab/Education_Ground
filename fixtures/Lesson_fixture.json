@@ -12,17 +12,6 @@
 },
 {
     "model": "education.lesson",
-    "pk": 3,
-    "fields": {
-        "name": "урок 22",
-        "description": "Описание урока 22",
-        "preview": "",
-        "link_to_video": null,
-        "course": 1
-    }
-},
-{
-    "model": "education.lesson",
     "pk": 4,
     "fields": {
         "name": "урок 25",
@@ -67,28 +56,6 @@
 },
 {
     "model": "education.lesson",
-    "pk": 9,
-    "fields": {
-        "name": "qashstnd",
-        "description": "123",
-        "preview": "",
-        "link_to_video": null,
-        "course": 4
-    }
-},
-{
-    "model": "education.lesson",
-    "pk": 11,
-    "fields": {
-        "name": "sggsgngm",
-        "description": "ggnsgfnffbfdfbmsn",
-        "preview": "",
-        "link_to_video": null,
-        "course": 10
-    }
-},
-{
-    "model": "education.lesson",
     "pk": 14,
     "fields": {
         "name": "ythgefr",
@@ -96,6 +63,50 @@
         "preview": "",
         "link_to_video": null,
         "course": 12
+    }
+},
+{
+    "model": "education.lesson",
+    "pk": 17,
+    "fields": {
+        "name": "test",
+        "description": "test123",
+        "preview": "",
+        "link_to_video": null,
+        "course": 12
+    }
+},
+{
+    "model": "education.lesson",
+    "pk": 18,
+    "fields": {
+        "name": "test",
+        "description": "test123",
+        "preview": "",
+        "link_to_video": null,
+        "course": 12
+    }
+},
+{
+    "model": "education.lesson",
+    "pk": 19,
+    "fields": {
+        "name": "test",
+        "description": "test123",
+        "preview": "",
+        "link_to_video": null,
+        "course": 12
+    }
+},
+{
+    "model": "education.lesson",
+    "pk": 20,
+    "fields": {
+        "name": "test",
+        "description": "test123",
+        "preview": "",
+        "link_to_video": null,
+        "course": 4
     }
 }
 ]
