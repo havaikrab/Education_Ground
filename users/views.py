@@ -28,6 +28,8 @@ class CustomUserViewSet(ModelViewSet):
     http_method_names = ["get", "put", "patch", "delete"]
 
     def get_permissions(self) -> list:
+        """Указание необходимых разрешений для соответствующих действий контроллера"""
+
         if self.action in ["destroy", "update", "partial_update"]:
             return [IsAuthenticated(), IsOwner()]
         return [IsAuthenticated()]
@@ -42,7 +44,6 @@ class CustomUserChangePasswordAPIView(APIView):
         """POST-запрос на смену пароля"""
 
         serializer = CustomUserChangePasswordSerializer(data=request.data, context={"user": request.user})
-        if serializer.is_valid():
-            serializer.save()
-            return Response("Пароль успешно обновлен", status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)

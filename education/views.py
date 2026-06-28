@@ -1,4 +1,4 @@
-from typing import Any, cast
+from typing import Sequence, cast
 
 from django.core.exceptions import PermissionDenied
 from django.db.models import QuerySet
@@ -24,10 +24,11 @@ class CourseViewSet(ModelViewSet):
     def get_queryset(self) -> QuerySet:
         """Определение списка объектов для отображения"""
 
+        queryset = super().get_queryset()
         user = cast(CustomUser, self.request.user)
-        if user.groups.filter(name="Модераторы").exists():
-            return Course.objects.all()
-        return Course.objects.filter(owner=user)
+        if not user.groups.filter(name="Модераторы").exists():
+            queryset = queryset.filter(owner=user)
+        return queryset
 
     def perform_create(self, serializer: BaseSerializer) -> None:
         """Указание авторизованного пользователя владельцем создаваемого курса"""
@@ -35,18 +36,18 @@ class CourseViewSet(ModelViewSet):
         user = self.request.user
         serializer.save(owner=user)
 
-    def get_permissions(self) -> list:
+    def get_permissions(self) -> Sequence:
         """Определение разрешений на использование функциональности контроллера"""
 
         if self.action == "create":
-            permission_classes: list[Any] = [IsAuthenticated & ~IsModerator]
+            self.permission_classes = [IsAuthenticated & ~IsModerator]
         elif self.action in ["update", "partial_update", "retrieve"]:
-            permission_classes = [IsAuthenticated & (IsModerator | IsOwner)]
+            self.permission_classes = [IsAuthenticated & (IsModerator | IsOwner)]
         elif self.action == "destroy":
-            permission_classes = [IsAuthenticated & IsOwner]
+            self.permission_classes = [IsAuthenticated & IsOwner]
         else:
-            permission_classes = [IsAuthenticated]
-        return [perm() for perm in permission_classes]
+            self.permission_classes = [IsAuthenticated]
+        return super().get_permissions()
 
 
 class LessonCreateAPIView(generics.CreateAPIView):
@@ -60,7 +61,6 @@ class LessonCreateAPIView(generics.CreateAPIView):
 
         user = cast(CustomUser, self.request.user)
         course = serializer.validated_data.get("course")
-        print(serializer.validated_data)
         if course.owner != user:  # type: ignore
             raise PermissionDenied("Запрещено создавать уроки для чужих курсов")
         serializer.save()
@@ -75,10 +75,11 @@ class LessonListAPIView(generics.ListAPIView):
     def get_queryset(self) -> QuerySet:
         """Определение списка объектов для отображения"""
 
+        queryset = super().get_queryset()
         user = cast(CustomUser, self.request.user)
-        if user.groups.filter(name="Модераторы").exists():
-            return Lesson.objects.all()
-        return Lesson.objects.filter(course__owner=user)
+        if not user.groups.filter(name="Модераторы").exists():
+            queryset = queryset.filter(course__owner=user)
+        return queryset
 
 
 class LessonRetrieveAPIView(generics.RetrieveAPIView):
