@@ -1,17 +1,21 @@
-from typing import Sequence, cast
+from typing import Any, Sequence, cast
 
 from django.core.exceptions import PermissionDenied
 from django.db.models import QuerySet
-from rest_framework import generics
+from django.shortcuts import get_object_or_404
+from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
+from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
+from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from users.models import CustomUser
 from users.permissions import IsModerator, IsOwner
 
 from .filters import PaymentFilterSet
-from .models import Course, Lesson, Payment
+from .models import Course, Lesson, Payment, Subscription
 from .serializers import CourseSerializer, LessonSerializer, PaymentSerializer
 
 
@@ -121,3 +125,22 @@ class PaymentListAPIView(generics.ListAPIView):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
     filterset_class = PaymentFilterSet
+
+
+class SubscriptionActivateAPIView(APIView):
+    """Контроллер активации подписки на курс"""
+
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """POST-запрос на создание объекта подписки"""
+
+        user = request.user
+        course_id = kwargs.get("pk")
+        course = get_object_or_404(Course, pk=course_id)
+        if course.owner == user:
+            return Response(
+                {"error": "Запрещено подписываться на собственный курс."}, status=status.HTTP_400_BAD_REQUEST
+            )
+        subscription, created = Subscription.objects.get_or_create(subscriber=user, course=course)
+        if created:
+            return Response({"message": "Подписка оформлена"})
+        return Response({"message": "Вы уже подписаны на данный курс."}, status=status.HTTP_200_OK)
