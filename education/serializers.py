@@ -1,10 +1,14 @@
-from rest_framework.serializers import ModelSerializer, SerializerMethodField
+from rest_framework import serializers
 
 from .models import Course, Lesson, Payment
+from .validators import LinkValidator
 
 
-class LessonSerializer(ModelSerializer):
+class LessonSerializer(serializers.ModelSerializer):
     """Сериализатор модели урока"""
+
+    description = serializers.CharField(validators=[LinkValidator(["youtube.com"])])
+    link_to_video = serializers.URLField(validators=[LinkValidator(["youtube.com"])])
 
     class Meta:
         """Параметры сериализатора"""
@@ -13,10 +17,11 @@ class LessonSerializer(ModelSerializer):
         fields = "__all__"
 
 
-class CourseSerializer(ModelSerializer):
+class CourseSerializer(serializers.ModelSerializer):
     """Сериализатор модели курса"""
 
-    lessons_count = SerializerMethodField()
+    description = serializers.CharField(validators=[LinkValidator(["youtube.com"])])
+    lessons_count = serializers.SerializerMethodField()
     lessons_details = LessonSerializer(read_only=True, many=True, source="lessons")
 
     class Meta:
@@ -32,7 +37,7 @@ class CourseSerializer(ModelSerializer):
         return course.lessons.count()  # type: ignore
 
 
-class PaymentSerializer(ModelSerializer):
+class PaymentSerializer(serializers.ModelSerializer):
     """Сериализатор модели платежа"""
 
     class Meta:
