@@ -97,6 +97,15 @@ class LessonUpdateAPIView(generics.UpdateAPIView):
     serializer_class = LessonSerializer
     permission_classes = [IsAuthenticated & (IsModerator | IsOwner)]
 
+    def perform_update(self, serializer: BaseSerializer) -> None:
+        """Запрет присваивать обновляемый урок чужому курсу"""
+
+        user = cast(CustomUser, self.request.user)
+        course = serializer.validated_data.get("course")
+        if isinstance(course, Course) and course.owner != user:
+            raise PermissionDenied("Запрещено создавать уроки для чужих курсов")
+        serializer.save()
+
 
 class LessonDestroyAPIView(generics.DestroyAPIView):
     """Контроллер удаления объекта урока"""
