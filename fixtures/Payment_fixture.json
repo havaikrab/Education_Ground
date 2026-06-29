@@ -25,18 +25,6 @@
 },
 {
     "model": "education.payment",
-    "pk": 3,
-    "fields": {
-        "payer": 2,
-        "created_at": "2026-06-22T17:40:43.677Z",
-        "paid_course": null,
-        "paid_lesson": 3,
-        "amount": 555,
-        "method": "cashless"
-    }
-},
-{
-    "model": "education.payment",
     "pk": 4,
     "fields": {
         "payer": 2,
@@ -73,18 +61,6 @@
 },
 {
     "model": "education.payment",
-    "pk": 7,
-    "fields": {
-        "payer": 2,
-        "created_at": "2026-06-22T17:40:43.677Z",
-        "paid_course": null,
-        "paid_lesson": 3,
-        "amount": 11111,
-        "method": "cashless"
-    }
-},
-{
-    "model": "education.payment",
     "pk": 8,
     "fields": {
         "payer": 2,
@@ -93,6 +69,18 @@
         "paid_lesson": 1,
         "amount": 222,
         "method": "cash"
+    }
+},
+{
+    "model": "education.payment",
+    "pk": 9,
+    "fields": {
+        "payer": 2,
+        "created_at": "2026-06-22T17:41:26.793Z",
+        "paid_course": null,
+        "paid_lesson": 1,
+        "amount": 222,
+        "method": "cashless"
     }
 }
 ]

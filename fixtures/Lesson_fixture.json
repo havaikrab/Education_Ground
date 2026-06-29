@@ -12,17 +12,6 @@
 },
 {
     "model": "education.lesson",
-    "pk": 3,
-    "fields": {
-        "name": "урок 22",
-        "description": "Описание урока 22",
-        "preview": "",
-        "link_to_video": null,
-        "course": 1
-    }
-},
-{
-    "model": "education.lesson",
     "pk": 4,
     "fields": {
         "name": "урок 25",
@@ -30,6 +19,94 @@
         "preview": "",
         "link_to_video": null,
         "course": 3
+    }
+},
+{
+    "model": "education.lesson",
+    "pk": 6,
+    "fields": {
+        "name": "12345qwe",
+        "description": "12345qwe",
+        "preview": "",
+        "link_to_video": null,
+        "course": 1
+    }
+},
+{
+    "model": "education.lesson",
+    "pk": 7,
+    "fields": {
+        "name": "12345qwe",
+        "description": "12345qwe",
+        "preview": "",
+        "link_to_video": null,
+        "course": 1
+    }
+},
+{
+    "model": "education.lesson",
+    "pk": 8,
+    "fields": {
+        "name": "Курс от модера gthgerg",
+        "description": "Описание дополнительного курсаagar",
+        "preview": "",
+        "link_to_video": null,
+        "course": 7
+    }
+},
+{
+    "model": "education.lesson",
+    "pk": 14,
+    "fields": {
+        "name": "ythgefr",
+        "description": "1aerhaerh3",
+        "preview": "",
+        "link_to_video": null,
+        "course": 12
+    }
+},
+{
+    "model": "education.lesson",
+    "pk": 17,
+    "fields": {
+        "name": "test",
+        "description": "test123",
+        "preview": "",
+        "link_to_video": null,
+        "course": 12
+    }
+},
+{
+    "model": "education.lesson",
+    "pk": 18,
+    "fields": {
+        "name": "test",
+        "description": "test123",
+        "preview": "",
+        "link_to_video": null,
+        "course": 12
+    }
+},
+{
+    "model": "education.lesson",
+    "pk": 19,
+    "fields": {
+        "name": "test",
+        "description": "test123",
+        "preview": "",
+        "link_to_video": null,
+        "course": 12
+    }
+},
+{
+    "model": "education.lesson",
+    "pk": 20,
+    "fields": {
+        "name": "test",
+        "description": "test123",
+        "preview": "",
+        "link_to_video": null,
+        "course": 4
     }
 }
 ]

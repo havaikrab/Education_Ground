@@ -23,7 +23,8 @@ class CourseSerializer(ModelSerializer):
         """Параметры сериализатора"""
 
         model = Course
-        fields = ["id", "name", "preview", "description", "lessons_count", "lessons_details"]
+        fields = ["id", "name", "preview", "description", "owner", "lessons_count", "lessons_details"]
+        read_only_fields = ["owner"]
 
     def get_lessons_count(self, course: Course) -> int:
         """Получение количества уроков в текущем курсе"""

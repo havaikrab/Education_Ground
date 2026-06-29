@@ -14,6 +14,14 @@ class Course(models.Model):
         upload_to="courses_previews", verbose_name="Превью курса", blank=True, null=True
     )
     description: models.TextField = models.TextField(verbose_name="Описание курса")
+    owner: models.ForeignKey = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name="courses",
+        verbose_name="Владелец",
+        null=True,
+        blank=False,
+    )
 
     class Meta:
         """Класс настроек отображения"""
