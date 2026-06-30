@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Course, Lesson, Payment
+from .models import Course, Lesson, Payment, Subscription
 from .validators import LinkValidator
 
 
@@ -45,3 +45,30 @@ class PaymentSerializer(serializers.ModelSerializer):
 
         model = Payment
         fields = "__all__"
+
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+    """Сериализатор модели подписки"""
+
+    course_name = serializers.CharField(source="course.name", read_only=True)
+    course_preview = serializers.ImageField(source="course.preview", read_only=True)
+    payment_status = serializers.SerializerMethodField(read_only=True)
+    payment_amount = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        """Параметры сериализатора"""
+
+        model = Subscription
+        fields = ["course", "course_name", "course_preview", "payment_status", "payment_amount"]
+        read_only_fields = ["course"]
+
+    def get_payment_status(self, subscription: Subscription) -> bool:
+        """Метод вычисления статуса оплаты подписки"""
+
+        return bool(subscription.course.course_payments.exists())
+
+    def get_payment_amount(self, subscription: Subscription) -> int:
+        """Метод вычисления общей суммы платежей по подписке"""
+
+        payments = subscription.course.course_payments.all()
+        return sum([payment.amount for payment in payments])

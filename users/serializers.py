@@ -2,7 +2,7 @@ from typing import Any
 
 from rest_framework import serializers
 
-from education.serializers import PaymentSerializer
+from education.serializers import PaymentSerializer, SubscriptionSerializer
 
 from .models import CustomUser
 
@@ -50,12 +50,23 @@ class CustomUserSerializer(serializers.ModelSerializer):
     """Сериализатор модели пользователя"""
 
     payments = PaymentSerializer(many=True, read_only=True)
+    subscriptions = SubscriptionSerializer(many=True, read_only=True)
 
     class Meta:
         """Параметры сериализатора"""
 
         model = CustomUser
-        fields = ("username", "email", "first_name", "last_name", "phone", "city", "avatar", "payments")
+        fields = (
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+            "phone",
+            "city",
+            "avatar",
+            "payments",
+            "subscriptions",
+        )
 
     def to_representation(self, instance: CustomUser) -> dict:
 
@@ -64,6 +75,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
         if instance != user:
             data.pop("last_name")
             data.pop("payments")
+            data.pop("subscriptions")
         return data
 
 
