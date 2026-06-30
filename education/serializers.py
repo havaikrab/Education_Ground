@@ -21,6 +21,7 @@ class CourseSerializer(serializers.ModelSerializer):
     """Сериализатор модели курса"""
 
     description = serializers.CharField(validators=[LinkValidator(["youtube.com"])])
+    relation_status = serializers.SerializerMethodField()
     lessons_count = serializers.SerializerMethodField()
     lessons_details = LessonSerializer(read_only=True, many=True, source="lessons")
 
@@ -28,13 +29,43 @@ class CourseSerializer(serializers.ModelSerializer):
         """Параметры сериализатора"""
 
         model = Course
-        fields = ["id", "name", "preview", "description", "owner", "lessons_count", "lessons_details"]
+        fields = [
+            "id",
+            "name",
+            "preview",
+            "description",
+            "owner",
+            "relation_status",
+            "lessons_count",
+            "lessons_details",
+        ]
         read_only_fields = ["owner"]
 
     def get_lessons_count(self, course: Course) -> int:
         """Получение количества уроков в текущем курсе"""
 
         return course.lessons.count()  # type: ignore
+
+    def get_relation_status(self, course: Course) -> str:
+        """Определение статуса отношения курса к пользователю"""
+
+        user = self.context["request"].user
+        if course.owner == user:
+            return "owner"
+        elif Subscription.objects.filter(subscriber=user, course=course).exists():
+            return "subscriber"
+        return "undefined"
+
+    def to_representation(self, instance: Course) -> dict:
+        """Сокрытие некоторых данных от пользователей, не являющихся владельцем сериализуемого объекта"""
+
+        data = super().to_representation(instance)
+        user = self.context["request"].user
+        if instance.owner != user:
+            data.pop("description")
+            data.pop("owner")
+            data.pop("lessons_details")
+        return data
 
 
 class PaymentSerializer(serializers.ModelSerializer):

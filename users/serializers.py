@@ -69,6 +69,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
         )
 
     def to_representation(self, instance: CustomUser) -> dict:
+        """Сокрытие некоторых данных от пользователей, не являющихся владельцем сериализуемого объекта"""
 
         data = super().to_representation(instance)
         user = self.context["request"].user

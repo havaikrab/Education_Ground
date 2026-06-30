@@ -4,7 +4,7 @@ from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
 from rest_framework.views import APIView
 
-from education.models import Course, Lesson
+from education.models import Course, Lesson, Subscription
 from users.models import CustomUser
 
 
@@ -36,3 +36,15 @@ class IsOwner(BasePermission):
         if isinstance(obj, Lesson):
             return bool(obj.course.owner == user)
         return False
+
+
+class IsCourseSubscriber(BasePermission):
+    """Разрешение для пользователя-подписчика курса"""
+
+    message = "Доступ ограничен. Вы не подписаны на данный курс."
+
+    def has_object_permission(self, request: Request, view: APIView, course: Course) -> bool:
+        """Проверка, является ли авторизованный пользователь подписчиком"""
+
+        user = request.user
+        return Subscription.objects.filter(subscriber=user, course=course).exists()

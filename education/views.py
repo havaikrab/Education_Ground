@@ -12,9 +12,9 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from users.models import CustomUser
-from users.permissions import IsModerator, IsOwner
+from users.permissions import IsCourseSubscriber, IsModerator, IsOwner
 
-from .filters import PaymentFilterSet
+from .filters import CourseFilterSet, PaymentFilterSet
 from .models import Course, Lesson, Payment, Subscription
 from .serializers import CourseSerializer, LessonSerializer, PaymentSerializer
 
@@ -24,15 +24,9 @@ class CourseViewSet(ModelViewSet):
 
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-
-    def get_queryset(self) -> QuerySet:
-        """Определение списка объектов для отображения"""
-
-        queryset = super().get_queryset()
-        user = cast(CustomUser, self.request.user)
-        if not user.groups.filter(name="Модераторы").exists():
-            queryset = queryset.filter(owner=user)
-        return queryset
+    filterset_class = CourseFilterSet
+    ordering_fields = ["id", "name"]
+    search_fields = ["name", "description"]
 
     def perform_create(self, serializer: BaseSerializer) -> None:
         """Указание авторизованного пользователя владельцем создаваемого курса"""
@@ -45,8 +39,10 @@ class CourseViewSet(ModelViewSet):
 
         if self.action == "create":
             self.permission_classes = [IsAuthenticated & ~IsModerator]
-        elif self.action in ["update", "partial_update", "retrieve"]:
+        elif self.action in ["update", "partial_update"]:
             self.permission_classes = [IsAuthenticated & (IsModerator | IsOwner)]
+        elif self.action == "retrieve":
+            self.permission_classes = [IsAuthenticated & (IsModerator | IsOwner | IsCourseSubscriber)]
         elif self.action == "destroy":
             self.permission_classes = [IsAuthenticated & IsOwner]
         else:
