@@ -140,6 +140,7 @@ class Subscription(models.Model):
         verbose_name = "Подписка"
         verbose_name_plural = "Подписки"
         ordering = ["course", "subscriber"]
+        unique_together = ["subscriber", "course"]
 
     def __str__(self) -> str:
         """Строковое отображение объекта подписки"""

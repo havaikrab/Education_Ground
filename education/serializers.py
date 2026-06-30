@@ -61,7 +61,7 @@ class CourseSerializer(serializers.ModelSerializer):
 
         data = super().to_representation(instance)
         user = self.context["request"].user
-        if instance.owner != user:
+        if data["relation_status"] == "undefined" and not user.groups.filter(name="Модераторы").exists():
             data.pop("description")
             data.pop("owner")
             data.pop("lessons_details")

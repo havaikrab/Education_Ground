@@ -139,4 +139,19 @@ class SubscriptionActivateAPIView(APIView):
         subscription, created = Subscription.objects.get_or_create(subscriber=user, course=course)
         if created:
             return Response({"message": "Подписка оформлена"})
-        return Response({"message": "Вы уже подписаны на данный курс."}, status=status.HTTP_200_OK)
+        return Response({"error": "Вы уже подписаны на данный курс."}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SubscriptionDeactivateAPIView(APIView):
+    """Контроллер удаления подписки на курс"""
+
+    def delete(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """POST-запрос на удаление объекта подписки"""
+
+        user = request.user
+        course_id = kwargs.get("pk")
+        subscription = get_object_or_404(
+            Subscription.objects.select_related("course"), subscriber=user, course_id=course_id
+        )
+        subscription.delete()
+        return Response({"message": "Подписка отключена."}, status=status.HTTP_200_OK)

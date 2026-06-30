@@ -1,8 +1,8 @@
 from typing import cast
 
 from django.db.models import QuerySet
-from django.http import HttpRequest
 from django_filters.rest_framework import BooleanFilter, CharFilter, FilterSet, OrderingFilter
+from rest_framework.request import Request
 
 from users.models import CustomUser
 
@@ -53,21 +53,21 @@ class CourseFilterSet(FilterSet):
     def subscription_filter(self, queryset: QuerySet, name: str, value: bool) -> QuerySet:
         """Фильтр-метод параметра subscription"""
 
-        if isinstance(self.request, HttpRequest):
-            user = cast(CustomUser, self.request.user)
-            if value is True:
-                return queryset.filter(accessions__subscriber=user)
-            elif value is False:
-                return queryset.exclude(accessions__subscriber=user)
+        request = cast(Request, self.request)
+        user = cast(CustomUser, request.user)
+        if value is True:
+            return queryset.filter(accessions__subscriber=user)
+        elif value is False:
+            return queryset.exclude(accessions__subscriber=user)
         return queryset
 
     def payment_filter(self, queryset: QuerySet, name: str, value: bool) -> QuerySet:
         """Фильтр-метод параметра paid"""
 
-        if isinstance(self.request, HttpRequest):
-            user = cast(CustomUser, self.request.user)
-            if value is True:
-                return queryset.filter(course_payments__payer=user).distinct()
-            elif value is False:
-                return queryset.exclude(course_payments__payer=user)
+        request = cast(Request, self.request)
+        user = cast(CustomUser, request.user)
+        if value is True:
+            return queryset.filter(course_payments__payer=user).distinct()
+        elif value is False:
+            return queryset.exclude(course_payments__payer=user)
         return queryset
