@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from config import test_data
-from education.models import Course
+from education.models import Course, Lesson
 from users.models import CustomUser
 
 
@@ -164,3 +164,192 @@ class CourseTestCase(APITestCase):
         url = f"/courses/{course.pk}/"
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+
+class LessonTestCase(APITestCase):
+    """Группа тестов связанных с обработкой объектов модели Lesson"""
+
+    def setUp(self) -> None:
+        """Наполнение БД тестовыми данными"""
+
+        test_data.set_lessons_data()
+        self.moderators = Group.objects.create(name="Модераторы")
+        self.user = CustomUser.objects.get(email="user_3@mail.py")
+        self.client.force_authenticate(user=self.user)
+
+    def test_lesson_creating(self) -> None:
+        """Тест запроса на создание объекта модели Lesson"""
+
+        url = reverse("education:lesson_create")
+        course = Course.objects.get(name="course_6")
+        response = self.client.post(
+            url,
+            data={
+                "name": "test_lesson",
+                "description": "test_description",
+                "link_to_video": "https://youtube.com/test_lesson",
+                "course": course.pk,
+            },
+        )
+        data = response.json()
+        lessons_count = Lesson.objects.count()
+        self.assertEqual(lessons_count, 16)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(data.get("course"), course.pk)
+        self.assertEqual(data.get("name"), "test_lesson")
+
+    def test_lesson_creating_by_moderator(self) -> None:
+        """Тест попытки запроса на создание объекта модели Lesson модератором"""
+
+        self.user.groups.add(self.moderators)
+        url = reverse("education:lesson_create")
+        course = Course.objects.get(name="course_6")
+        response = self.client.post(
+            url,
+            data={
+                "name": "test_lesson",
+                "description": "test_description",
+                "link_to_video": "https://youtube.com/test_lesson",
+                "course": course.pk,
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_lesson_creating_not_for_own_course(self) -> None:
+        """Тест попытки запроса на создание объекта модели Lesson для чужого курса"""
+
+        url = reverse("education:lesson_create")
+        course = Course.objects.get(name="course_7")
+        response = self.client.post(
+            url,
+            data={
+                "name": "test_lesson",
+                "description": "test_description",
+                "link_to_video": "https://youtube.com/test_lesson",
+                "course": course.pk,
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_getting_lessons_list(self) -> None:
+        """Тест запроса на отображение списка объектов модели Lesson"""
+
+        url = "/lessons/?ordering=id&page_size=12"
+        response = self.client.get(url)
+        data = response.json()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(data["results"]), 10)
+        self.assertEqual(data["count"], 15)
+        for i in range(10):
+            lesson = data["results"][i]
+            description = lesson.get("description")
+            link = lesson.get("link_to_video")
+            if i not in [6, 7, 8]:
+                self.assertEqual((description, link), (None, None))
+            else:
+                self.assertEqual(
+                    (description, link), (f"description of lesson_{i + 1}", f"youtube.com/lesson_{i + 1}")
+                )
+
+    def test_lesson_retrieve_by_moderator(self) -> None:
+        """Тест запроса на просмотр объекта модели Lesson пользователем-модератором"""
+
+        self.user.groups.add(self.moderators)
+        lesson = Lesson.objects.get(name="lesson_13")
+        url = f"/lessons/{lesson.pk}/"
+        response = self.client.get(url)
+        data = response.json()
+        self.assertEqual(
+            data,
+            {
+                "id": lesson.pk,
+                "name": "lesson_13",
+                "description": "description of lesson_13",
+                "preview": None,
+                "link_to_video": "youtube.com/lesson_13",
+                "course": lesson.course.pk,
+            },
+        )
+
+    def test_lesson_forbidden_retrieve(self) -> None:
+        """Тест запроса на отображение объекта модели Lesson пользователю, не имеющему права на просмотр"""
+
+        lesson = Lesson.objects.get(name="lesson_11")
+        url = f"/lessons/{lesson.pk}/"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_lesson_updating_by_moderator(self) -> None:
+        """Тест запроса на изменение объекта модели Lesson пользователем-модератором"""
+
+        self.user.groups.add(self.moderators)
+        lesson = Lesson.objects.get(name="lesson_15")
+        other_course = Course.objects.get(name="course_8")
+        url = f"/lessons/update/{lesson.pk}/"
+        response = self.client.put(
+            url,
+            data={
+                "name": "updated_lesson",
+                "description": "updated_description",
+                "link_to_video": "https://youtube.com/lesson_15",
+                "course": other_course.pk,
+            },
+        )
+        data = response.json()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            data,
+            {
+                "id": lesson.pk,
+                "name": "updated_lesson",
+                "description": "updated_description",
+                "preview": None,
+                "link_to_video": "https://youtube.com/lesson_15",
+                "course": other_course.pk,
+            },
+        )
+
+    def test_lesson_forbidden_updating(self) -> None:
+        """Тест попытки запроса на изменение объекта модели Lesson пользователем не имеющим прав"""
+
+        lesson = Lesson.objects.get(name="lesson_15")
+        other_course = Course.objects.get(name="course_8")
+        url = f"/lessons/update/{lesson.pk}/"
+        response = self.client.patch(url, data={"course": other_course.pk})
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_lesson_invalid_course_updating_by_owner(self) -> None:
+        """Тест попытки запроса на присвоение объекта модели Lesson другому пользователю"""
+
+        lesson = Lesson.objects.get(name="lesson_8")
+        other_course = Course.objects.get(name="course_2")
+        url = f"/lessons/update/{lesson.pk}/"
+        response = self.client.patch(url, data={"course": other_course.pk})
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_lesson_invalid_course_updating_by_moderator(self) -> None:
+        """Тест попытки запроса на присвоение объекта модели Lesson другому пользователю"""
+
+        self.user.groups.add(self.moderators)
+        lesson = Lesson.objects.get(name="lesson_3")
+        other_course = Course.objects.get(name="course_5")
+        url = f"/lessons/update/{lesson.pk}/"
+        response = self.client.patch(url, data={"course": other_course.pk})
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_lesson_destroy(self) -> None:
+        """Тест запроса на удаление объекта модели Lesson владельцем"""
+
+        lesson = Lesson.objects.get(name="lesson_9")
+        url = f"/lessons/delete/{lesson.pk}/"
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_lesson_destroy_by_moderator(self) -> None:
+        """Тест попытки запроса на удаление объекта модели Lesson модератором"""
+
+        self.user.groups.add(self.moderators)
+        lesson = Lesson.objects.get(name="lesson_14")
+        url = f"/lessons/delete/{lesson.pk}/"
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

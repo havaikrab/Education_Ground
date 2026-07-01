@@ -93,10 +93,10 @@ class LessonUpdateAPIView(generics.UpdateAPIView):
     def perform_update(self, serializer: BaseSerializer) -> None:
         """Запрет присваивать обновляемый урок чужому курсу"""
 
-        user = cast(CustomUser, self.request.user)
+        lesson = self.get_object()
         course = serializer.validated_data.get("course")
-        if isinstance(course, Course) and course.owner != user:
-            raise PermissionDenied("Запрещено создавать уроки для чужих курсов")
+        if isinstance(course, Course) and lesson.course.owner != course.owner:
+            raise PermissionDenied("У изменяемого урока и указанного курса должен быть один и тот же владелец")
         serializer.save()
 
 
