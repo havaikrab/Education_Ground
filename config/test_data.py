@@ -1,4 +1,6 @@
-from education.models import Course, Lesson
+from django.utils import timezone
+
+from education.models import Course, Lesson, Payment
 from users.models import CustomUser
 
 
@@ -167,6 +169,53 @@ def lesson_test_data() -> list:
     ]
 
 
+def payment_test_data() -> list:
+    """Возвращает тестовые данные для создания объектов модели Payment"""
+
+    return [
+        {
+            "payer": "user_5",
+            "created_at": timezone.now(),
+            "paid_course": "course_10",
+            "amount": 3000,
+            "method": "cashless",
+        },
+        {"payer": "user_5", "created_at": timezone.now(), "paid_course": "course_10", "amount": 333, "method": "cash"},
+        {"payer": "user_5", "created_at": timezone.now(), "paid_lesson": "lesson_13", "amount": 100, "method": "cash"},
+        {
+            "payer": "user_5",
+            "created_at": timezone.now(),
+            "paid_lesson": "lesson_12",
+            "amount": 200,
+            "method": "cashless",
+        },
+        {"payer": "user_1", "created_at": timezone.now(), "paid_lesson": "lesson_15", "amount": 300, "method": "cash"},
+        {
+            "payer": "user_1",
+            "created_at": timezone.now(),
+            "paid_course": "course_9",
+            "amount": 2000,
+            "method": "cashless",
+        },
+        {
+            "payer": "user_1",
+            "created_at": timezone.now(),
+            "paid_course": "course_8",
+            "amount": 1,
+            "method": "cashless",
+        },
+        {"payer": "user_2", "created_at": timezone.now(), "paid_course": "course_6", "amount": 4000, "method": "cash"},
+        {"payer": "user_2", "created_at": timezone.now(), "paid_lesson": "lesson_7", "amount": 400, "method": "cash"},
+        {
+            "payer": "user_3",
+            "created_at": timezone.now(),
+            "paid_lesson": "lesson_1",
+            "amount": 500,
+            "method": "cashless",
+        },
+    ]
+
+
 def set_users_data() -> None:
     """Наполняет тестовую базу данных объектами модели CustomUser"""
 
@@ -194,3 +243,21 @@ def set_lessons_data() -> None:
         course_name = lesson.pop("course")
         course = Course.objects.get(name=course_name)
         Lesson.objects.create(course=course, **lesson)
+
+
+def set_payments_data() -> None:
+    """Наполняет тестовую базу данных связанными объектами моделей CustomUser, Course, Lesson, Payment"""
+
+    set_lessons_data()
+    payments = payment_test_data()
+    for payment in payments:
+        payer_name = payment.pop("payer")
+        payer = CustomUser.objects.get(username=payer_name)
+        course_name = payment.pop("paid_course", None)
+        lesson_name = payment.pop("paid_lesson", None)
+        if course_name is not None:
+            course = Course.objects.get(name=course_name)
+            Payment.objects.create(payer=payer, paid_course=course, **payment)
+        if lesson_name is not None:
+            lesson = Lesson.objects.get(name=lesson_name)
+            Payment.objects.create(payer=payer, paid_lesson=lesson, **payment)

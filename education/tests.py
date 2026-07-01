@@ -353,3 +353,37 @@ class LessonTestCase(APITestCase):
         url = f"/lessons/delete/{lesson.pk}/"
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class PaymentTestCase(APITestCase):
+    """Группа тестов связанных с обработкой объектов модели Payment"""
+
+    def setUp(self) -> None:
+        """Наполнение БД тестовыми данными"""
+
+        test_data.set_payments_data()
+        self.user = CustomUser.objects.get(email="user_5@mail.py")
+        self.client.force_authenticate(user=self.user)
+
+    def test_getting_courses_payments_list(self) -> None:
+        """Тест запроса на отображение списка объектов модели Payment с применением фильтрации"""
+
+        course = Course.objects.get(name="course_10")
+        url = f"/payments/?payment_category=courses&paid_course={course.pk}"
+        response = self.client.get(url)
+        data = response.json()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(data), 2)
+        total_sum = sum([payment["amount"] for payment in data])
+        self.assertEqual(total_sum, 3333)
+
+    def test_getting_lessons_payments_list(self) -> None:
+        """Тест запроса на отображение списка объектов модели Payment с применением фильтрации"""
+
+        url = "/payments/?payment_category=lessons&method=cash"
+        response = self.client.get(url)
+        data = response.json()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(data), 3)
+        total_sum = sum([payment["amount"] for payment in data])
+        self.assertEqual(total_sum, 800)
