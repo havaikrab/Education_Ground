@@ -53,133 +53,118 @@ def customuser_test_data() -> list:
     ]
 
 
-def course_test_data() -> dict:
+def course_test_data() -> list:
     """Возвращает тестовые данные для создания объектов модели Course"""
 
-    return {
-        "user_1_a": {
-            "name": "course_1",
-            "description": "description of course_1",
-        },
-        "user_2_b": {
-            "name": "course_2",
-            "description": "description of course_2",
-        },
-        "user_2_c": {
-            "name": "course_3",
-            "description": "description of course_3",
-        },
-        "user_3_d": {
-            "name": "course_4",
-            "description": "description of course_4",
-        },
-        "user_3_e": {
-            "name": "course_5",
-            "description": "description of course_5",
-        },
-        "user_3_f": {
-            "name": "course_6",
-            "description": "description of course_6",
-        },
-        "user_4_g": {
-            "name": "course_7",
-            "description": "description of course_7",
-        },
-        "user_4_h": {
-            "name": "course_8",
-            "description": "description of course_8",
-        },
-        "user_4_i": {
-            "name": "course_9",
-            "description": "description of course_9",
-        },
-        "user_4_j": {
-            "name": "course_10",
-            "description": "description of course_10",
-        },
-    }
+    return [
+        {"name": "course_1", "description": "description of course_1", "owner": "user_1"},
+        {"name": "course_2", "description": "description of course_2", "owner": "user_2"},
+        {"name": "course_3", "description": "description of course_3", "owner": "user_2"},
+        {"name": "course_4", "description": "description of course_4", "owner": "user_3"},
+        {"name": "course_5", "description": "description of course_5", "owner": "user_3"},
+        {"name": "course_6", "description": "description of course_6", "owner": "user_3"},
+        {"name": "course_7", "description": "description of course_7", "owner": "user_4"},
+        {"name": "course_8", "description": "description of course_8", "owner": "user_4"},
+        {"name": "course_9", "description": "description of course_9", "owner": "user_4"},
+        {"name": "course_10", "description": "description of course_10", "owner": "user_4"},
+    ]
 
 
-def lesson_test_data() -> dict:
+def lesson_test_data() -> list:
     """Возвращает тестовые данные для создания объектов модели Lesson"""
 
-    return {
-        "course_1_a": {
+    return [
+        {
             "name": "lesson_1",
             "description": "description of lesson_1",
             "link_to_video": "youtube.com/lesson_1",
+            "course": "course_1",
         },
-        "course_2_b": {
+        {
             "name": "lesson_2",
             "description": "description of lesson_2",
             "link_to_video": "youtube.com/lesson_2",
+            "course": "course_2",
         },
-        "course_2_c": {
+        {
             "name": "lesson_3",
             "description": "description of lesson_3",
             "link_to_video": "youtube.com/lesson_3",
+            "course": "course_2",
         },
-        "course_3_d": {
+        {
             "name": "lesson_4",
             "description": "description of lesson_4",
             "link_to_video": "youtube.com/lesson_4",
+            "course": "course_3",
         },
-        "course_3_e": {
+        {
             "name": "lesson_5",
             "description": "description of lesson_5",
             "link_to_video": "youtube.com/lesson_5",
+            "course": "course_3",
         },
-        "course_3_f": {
+        {
             "name": "lesson_6",
             "description": "description of lesson_6",
             "link_to_video": "youtube.com/lesson_6",
+            "course": "course_3",
         },
-        "course_5_g": {
+        {
             "name": "lesson_7",
             "description": "description of lesson_7",
             "link_to_video": "youtube.com/lesson_7",
+            "course": "course_5",
         },
-        "course_6_h": {
+        {
             "name": "lesson_8",
             "description": "description of lesson_8",
             "link_to_video": "youtube.com/lesson_8",
+            "course": "course_6",
         },
-        "course_6_i": {
+        {
             "name": "lesson_9",
             "description": "description of lesson_9",
             "link_to_video": "youtube.com/lesson_9",
+            "course": "course_6",
         },
-        "course_7_j": {
+        {
             "name": "lesson_10",
             "description": "description of lesson_10",
             "link_to_video": "youtube.com/lesson_10",
+            "course": "course_7",
         },
-        "course_7_k": {
+        {
             "name": "lesson_11",
             "description": "description of lesson_11",
             "link_to_video": "youtube.com/lesson_11",
+            "course": "course_7",
         },
-        "course_7_l": {
+        {
             "name": "lesson_12",
             "description": "description of lesson_12",
             "link_to_video": "youtube.com/lesson_12",
+            "course": "course_7",
         },
-        "course_9_m": {
+        {
             "name": "lesson_13",
             "description": "description of lesson_13",
             "link_to_video": "youtube.com/lesson_13",
+            "course": "course_9",
         },
-        "course_10_n": {
+        {
             "name": "lesson_14",
             "description": "description of lesson_14",
             "link_to_video": "youtube.com/lesson_14",
+            "course": "course_10",
         },
-        "course_10_o": {
+        {
             "name": "lesson_15",
             "description": "description of lesson_15",
             "link_to_video": "youtube.com/lesson_15",
+            "course": "course_10",
         },
-    }
+    ]
 
 
 def set_users_data() -> None:
@@ -194,9 +179,10 @@ def set_courses_data() -> None:
 
     set_users_data()
     courses = course_test_data()
-    for k, v in courses.items():
-        owner = CustomUser.objects.get(username=k[:-2])
-        Course.objects.create(owner=owner, **v)
+    for course in courses:
+        username = course.pop("owner")
+        owner = CustomUser.objects.get(username=username)
+        Course.objects.create(owner=owner, **course)
 
 
 def set_lessons_data() -> None:
@@ -204,6 +190,7 @@ def set_lessons_data() -> None:
 
     set_courses_data()
     lessons = lesson_test_data()
-    for k, v in lessons.items():
-        course = Course.objects.get(name=k[:-2])
-        Lesson.objects.create(course=course, **v)
+    for lesson in lessons:
+        course_name = lesson.pop("course")
+        course = Course.objects.get(name=course_name)
+        Lesson.objects.create(course=course, **lesson)

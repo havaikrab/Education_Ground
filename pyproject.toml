@@ -14,7 +14,8 @@ dependencies = [
     "djangorestframework (>=3.17.1,<4.0.0)",
     "pillow (>=12.2.0,<13.0.0)",
     "django-filter (>=25.2,<26.0)",
-    "djangorestframework-simplejwt (>=5.5.1,<6.0.0)"
+    "djangorestframework-simplejwt (>=5.5.1,<6.0.0)",
+    "coverage (>=7.14.3,<8.0.0)"
 ]
 
 
