@@ -1,7 +1,6 @@
 from typing import Any, Sequence, cast
 
 from django.core.exceptions import PermissionDenied
-from django.db.models import QuerySet
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
@@ -16,6 +15,7 @@ from users.permissions import IsCourseSubscriber, IsModerator, IsOwner
 
 from .filters import CourseFilterSet, PaymentFilterSet
 from .models import Course, Lesson, Payment, Subscription
+from .paginators import EducationPaginator
 from .serializers import CourseSerializer, LessonSerializer, PaymentSerializer
 
 
@@ -27,6 +27,7 @@ class CourseViewSet(ModelViewSet):
     filterset_class = CourseFilterSet
     ordering_fields = ["id", "name"]
     search_fields = ["name", "description"]
+    pagination_class = EducationPaginator
 
     def perform_create(self, serializer: BaseSerializer) -> None:
         """Указание авторизованного пользователя владельцем создаваемого курса"""
@@ -71,15 +72,7 @@ class LessonListAPIView(generics.ListAPIView):
 
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-
-    def get_queryset(self) -> QuerySet:
-        """Определение списка объектов для отображения"""
-
-        queryset = super().get_queryset()
-        user = cast(CustomUser, self.request.user)
-        if not user.groups.filter(name="Модераторы").exists():
-            queryset = queryset.filter(course__owner=user)
-        return queryset
+    pagination_class = EducationPaginator
 
 
 class LessonRetrieveAPIView(generics.RetrieveAPIView):

@@ -16,6 +16,23 @@ class LessonSerializer(serializers.ModelSerializer):
         model = Lesson
         fields = "__all__"
 
+    def to_representation(self, instance: Lesson) -> dict:
+        """Сокрытие некоторых данных от пользователей, не являющихся владельцем сериализуемого объекта"""
+
+        data = super().to_representation(instance)
+        user = self.context["request"].user
+        has_subscription = Subscription.objects.filter(subscriber=user, course=instance.course).exists()
+        paid = Payment.objects.filter(payer=user, paid_lesson=instance).exists()
+        if (
+            instance.course.owner != user
+            and not user.groups.filter(name="Модераторы").exists()
+            and not has_subscription
+            and not paid
+        ):
+            data.pop("description")
+            data.pop("link_to_video")
+        return data
+
 
 class CourseSerializer(serializers.ModelSerializer):
     """Сериализатор модели курса"""

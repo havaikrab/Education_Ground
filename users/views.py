@@ -8,6 +8,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
+from education.paginators import EducationPaginator
+
 from .models import CustomUser
 from .permissions import IsOwner
 from .serializers import CustomUserChangePasswordSerializer, CustomUserRegisterSerializer, CustomUserSerializer
@@ -26,6 +28,9 @@ class CustomUserViewSet(ModelViewSet):
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
     http_method_names = ["get", "put", "patch", "delete"]
+    pagination_class = EducationPaginator
+    ordering_fields = ["id", "email"]
+    search_fields = ["email"]
 
     def get_permissions(self) -> list:
         """Указание необходимых разрешений для соответствующих действий контроллера"""
