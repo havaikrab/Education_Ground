@@ -387,3 +387,90 @@ class PaymentTestCase(APITestCase):
         self.assertEqual(len(data), 3)
         total_sum = sum([payment["amount"] for payment in data])
         self.assertEqual(total_sum, 800)
+
+
+class SubscriptionTestCase(APITestCase):
+    """Группа тестов связанных с обработкой объектов модели Subscription"""
+
+    def setUp(self) -> None:
+        """Наполнение БД тестовыми данными"""
+
+        test_data.set_subscriptions_data()
+        self.user = CustomUser.objects.get(email="user_1@mail.py")
+        self.client.force_authenticate(user=self.user)
+
+    def test_subscription_activating(self) -> None:
+        """Тест запроса на получение пользователем подписки на курс"""
+
+        url = f"/users/{self.user.pk}/"
+
+        response = self.client.get(url)
+        data = response.json()
+        subscriptions = set()
+        for subscription in data["subscriptions"]:
+            subscriptions.add(subscription["course_name"])
+        self.assertEqual(subscriptions, {"course_8", "course_9", "course_10"})
+
+        course = Course.objects.get(name="course_7")
+        activating_url = f"/courses/{course.pk}/subscribe/"
+        activating_response = self.client.post(activating_url)
+        self.assertEqual(activating_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(activating_response.data, {"message": "Подписка оформлена"})
+
+        result_response = self.client.get(url)
+        result_data = result_response.json()
+        result_subscriptions = set()
+        for subscription in result_data["subscriptions"]:
+            result_subscriptions.add(subscription["course_name"])
+        self.assertEqual(result_subscriptions, {"course_7", "course_8", "course_9", "course_10"})
+
+    def test_subscription_own_course_activating(self) -> None:
+        """Тест попытки запроса на получение пользователем подписки на собственный курс"""
+
+        course = Course.objects.get(name="course_1")
+        url = f"/courses/{course.pk}/subscribe/"
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, {"error": "Запрещено подписываться на собственный курс."})
+
+    def test_subscription_repeat_course_activating(self) -> None:
+        """Тест попытки запроса на повторное получение пользователем уже имеющейся подписки на курс"""
+
+        course = Course.objects.get(name="course_10")
+        url = f"/courses/{course.pk}/subscribe/"
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, {"error": "Вы уже подписаны на данный курс."})
+
+    def test_subscription_deactivating(self) -> None:
+        """Тест запроса на отказ пользователя от подписки на курс"""
+
+        url = f"/users/{self.user.pk}/"
+
+        response = self.client.get(url)
+        data = response.json()
+        subscriptions = set()
+        for subscription in data["subscriptions"]:
+            subscriptions.add(subscription["course_name"])
+        self.assertEqual(subscriptions, {"course_8", "course_9", "course_10"})
+
+        course = Course.objects.get(name="course_9")
+        deactivating_url = f"/courses/{course.pk}/refuse/"
+        deactivating_response = self.client.delete(deactivating_url)
+        self.assertEqual(deactivating_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(deactivating_response.data, {"message": "Подписка отключена."})
+
+        result_response = self.client.get(url)
+        result_data = result_response.json()
+        result_subscriptions = set()
+        for subscription in result_data["subscriptions"]:
+            result_subscriptions.add(subscription["course_name"])
+        self.assertEqual(result_subscriptions, {"course_8", "course_10"})
+
+    def test_not_existing_subscription_deactivating(self) -> None:
+        """Тест попытки запроса на отказ пользователя от несуществующей подписки на курс"""
+
+        course = Course.objects.get(name="course_6")
+        url = f"/courses/{course.pk}/refuse/"
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

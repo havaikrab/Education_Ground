@@ -1,6 +1,6 @@
 from django.utils import timezone
 
-from education.models import Course, Lesson, Payment
+from education.models import Course, Lesson, Payment, Subscription
 from users.models import CustomUser
 
 
@@ -216,6 +216,23 @@ def payment_test_data() -> list:
     ]
 
 
+def subscription_test_data() -> list:
+    """Возвращает тестовые данные для создания объектов модели Subscription"""
+
+    return [
+        {"subscriber": "user_1", "course": "course_10"},
+        {"subscriber": "user_1", "course": "course_9"},
+        {"subscriber": "user_1", "course": "course_8"},
+        {"subscriber": "user_2", "course": "course_7"},
+        {"subscriber": "user_2", "course": "course_4"},
+        {"subscriber": "user_3", "course": "course_10"},
+        {"subscriber": "user_5", "course": "course_9"},
+        {"subscriber": "user_5", "course": "course_5"},
+        {"subscriber": "user_5", "course": "course_3"},
+        {"subscriber": "user_5", "course": "course_1"},
+    ]
+
+
 def set_users_data() -> None:
     """Наполняет тестовую базу данных объектами модели CustomUser"""
 
@@ -261,3 +278,14 @@ def set_payments_data() -> None:
         if lesson_name is not None:
             lesson = Lesson.objects.get(name=lesson_name)
             Payment.objects.create(payer=payer, paid_lesson=lesson, **payment)
+
+
+def set_subscriptions_data() -> None:
+    """Наполняет тестовую базу данных связанными объектами моделей CustomUser, Course, Lesson, Payment, Subscription"""
+
+    set_payments_data()
+    subscriptions = subscription_test_data()
+    for subscription in subscriptions:
+        subscriber = CustomUser.objects.get(username=subscription["subscriber"])
+        course = Course.objects.get(name=subscription["course"])
+        Subscription.objects.create(subscriber=subscriber, course=course)
