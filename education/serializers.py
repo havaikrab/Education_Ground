@@ -116,7 +116,8 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         return bool(subscription.course.course_payments.exists())
 
     def get_payment_amount(self, subscription: Subscription) -> int:
-        """Метод вычисления общей суммы платежей по подписке"""
+        """Метод вычисления общей суммы платежей пользователя по подписке"""
 
-        payments = subscription.course.course_payments.all()
+        user = self.context["request"].user
+        payments = subscription.course.course_payments.filter(payer=user)
         return sum([payment.amount for payment in payments])

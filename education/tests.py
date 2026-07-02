@@ -368,14 +368,14 @@ class PaymentTestCase(APITestCase):
     def test_getting_courses_payments_list(self) -> None:
         """Тест запроса на отображение списка объектов модели Payment с применением фильтрации"""
 
-        course = Course.objects.get(name="course_10")
+        course = Course.objects.get(name="course_9")
         url = f"/payments/?payment_category=courses&paid_course={course.pk}"
         response = self.client.get(url)
         data = response.json()
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(data), 2)
         total_sum = sum([payment["amount"] for payment in data])
-        self.assertEqual(total_sum, 3333)
+        self.assertEqual(total_sum, 2200)
 
     def test_getting_lessons_payments_list(self) -> None:
         """Тест запроса на отображение списка объектов модели Payment с применением фильтрации"""

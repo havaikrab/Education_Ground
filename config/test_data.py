@@ -185,7 +185,7 @@ def payment_test_data() -> list:
         {
             "payer": "user_5",
             "created_at": timezone.now(),
-            "paid_lesson": "lesson_12",
+            "paid_course": "course_9",
             "amount": 200,
             "method": "cashless",
         },
