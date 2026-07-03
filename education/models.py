@@ -122,3 +122,27 @@ class Payment(models.Model):
         """Проверка валидности данных перед сохранением объекта в БД"""
         self.full_clean()
         super().save(*args, **kwargs)
+
+
+class Subscription(models.Model):
+    """Модель подписки"""
+
+    subscriber: models.ForeignKey = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name="subscriptions", verbose_name="Подписчик"
+    )
+    course: models.ForeignKey = models.ForeignKey(
+        Course, on_delete=models.CASCADE, related_name="accessions", verbose_name="Курс"
+    )
+
+    class Meta:
+        """Класс настроек отображения"""
+
+        verbose_name = "Подписка"
+        verbose_name_plural = "Подписки"
+        ordering = ["course", "subscriber"]
+        unique_together = ["subscriber", "course"]
+
+    def __str__(self) -> str:
+        """Строковое отображение объекта подписки"""
+
+        return f"{self.course}: {self.subscriber.email}"
