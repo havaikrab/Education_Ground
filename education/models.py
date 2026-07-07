@@ -23,7 +23,7 @@ class Course(models.Model):
         blank=False,
     )
     usd_price: models.PositiveIntegerField = models.PositiveIntegerField(
-        verbose_name="Стоимость подписки на курс в центах USD", default=1000
+        verbose_name="Стоимость подписки на курс в центах USD"
     )
 
     class Meta:
@@ -52,7 +52,7 @@ class Lesson(models.Model):
         Course, on_delete=models.CASCADE, related_name="lessons", verbose_name="Курс"
     )
     usd_price: models.PositiveIntegerField = models.PositiveIntegerField(
-        verbose_name="Стоимость отдельного урока в центах USD", default=100
+        verbose_name="Стоимость отдельного урока в центах USD"
     )
 
     class Meta:
