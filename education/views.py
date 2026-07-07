@@ -2,6 +2,8 @@ from typing import Any, Sequence, cast
 
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
+from django.utils.decorators import method_decorator
+from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
@@ -19,6 +21,50 @@ from .paginators import EducationPaginator
 from .serializers import CourseSerializer, LessonSerializer, PaymentSerializer
 
 
+@extend_schema_view(
+    create=extend_schema(
+        summary="Создание нового курса",
+        description="""
+Необходима авторизация, пользователи-модераторы не имеют права создавать новые курсы.
+В теле запроса нужно указать обязательные ключи "name", "description" и, опционально, ключ "preview"
+с соответствующими значениями.
+""",
+    ),
+    list=extend_schema(
+        summary="Отображение списка курсов с пагинацией и фильтрацией",
+        description="""
+Необходима авторизация.
+Пользователю, не являющемуся модератором приложения или владельцем курса
+отображается только название курса и изображение-аватар.
+""",
+    ),
+    retrieve=extend_schema(
+        summary="Отображение деталей курса",
+        description="""
+Необходима авторизация и права модератора, владельца или подписчика.
+Пользователю, имеющему соответствующие права, доступно полное отображение курса,
+в противном случае возвращается ошибка со статус-кодом 403.
+""",
+    ),
+    update=extend_schema(
+        summary="Полное обновление курса",
+        description="""
+Необходима авторизация и права модератора или владельца.
+В теле запроса необходимо передать обязательные ключи "name" и "description" с соответствующими значениями.
+""",
+    ),
+    partial_update=extend_schema(
+        summary="Частичное обновление курса",
+        description="""
+Необходима авторизация и права модератора или владельца.
+В теле запроса нужно указать новые значения для одного или нескольких полей "name", "description" или "preview".
+""",
+    ),
+    destroy=extend_schema(
+        summary="Удаление курса со всеми входящими в него уроками",
+        description="Необходима авторизация и права владельца.",
+    ),
+)
 class CourseViewSet(ModelViewSet):
     """Вьюсет для модели курса"""
 
@@ -51,6 +97,28 @@ class CourseViewSet(ModelViewSet):
         return super().get_permissions()
 
 
+@method_decorator(
+    name="post",
+    decorator=extend_schema(
+        summary="Создание урока",
+        responses={
+            200: OpenApiResponse(description="""
+{"id": 1, "name": "Новый урок", "description": "Описание урока", "course": 1, "link_to_video": null, "preview": null}
+"""),
+            401: OpenApiResponse(description="Пользователь не авторизован."),
+            400: OpenApiResponse(description="""
+- Ошибка валидации данных.
+- Не указано одно или несколько обязательных полей "name", "description", "course".
+"""),
+            403: OpenApiResponse(
+                description="""
+- Модераторам запрещено создавать уроки.
+- Запрещено создавать уроки для чужих курсов.
+""",
+            ),
+        },
+    ),
+)
 class LessonCreateAPIView(generics.CreateAPIView):
     """Контроллер создания объекта урока"""
 
@@ -67,6 +135,20 @@ class LessonCreateAPIView(generics.CreateAPIView):
         serializer.save()
 
 
+@method_decorator(
+    name="get",
+    decorator=extend_schema(
+        summary="Отображение списка уроков с пагинацией",
+        responses={
+            200: OpenApiResponse(description="""
+{"count": 10, "next": "http://localhost:8000/lessons/?page=2&page_size=2", "previous": null, "results": [
+    {"id": 1, "name": "Старый урок", "description": "Описание", "course": 1, "link_to_video": null, "preview": null},
+    {"id": 2, "name": "Новый урок", "description": "Описание", "course": 2, "link_to_video": null, "preview": null}]}
+"""),
+            401: OpenApiResponse(description="Пользователь не авторизован."),
+        },
+    ),
+)
 class LessonListAPIView(generics.ListAPIView):
     """Контроллер списка уроков"""
 
@@ -75,6 +157,20 @@ class LessonListAPIView(generics.ListAPIView):
     pagination_class = EducationPaginator
 
 
+@method_decorator(
+    name="get",
+    decorator=extend_schema(
+        summary="Детали урока",
+        responses={
+            200: OpenApiResponse(description="""
+{"id": 1, "name": "Новый урок", "description": "Описание урока", "course": 1, "link_to_video": null, "preview": null}
+"""),
+            401: OpenApiResponse(description="Пользователь не авторизован."),
+            403: OpenApiResponse(description="Необходимы права владельца, модератора или подписчика"),
+            404: OpenApiResponse(description="Урок не найден."),
+        },
+    ),
+)
 class LessonRetrieveAPIView(generics.RetrieveAPIView):
     """Контроллер объекта урока"""
 
@@ -83,6 +179,49 @@ class LessonRetrieveAPIView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated & (IsModerator | IsOwner)]
 
 
+@method_decorator(
+    name="put",
+    decorator=extend_schema(
+        summary="Изменение урока",
+        responses={
+            200: OpenApiResponse(description="""
+{"id": 1, "name": "Обновленнный", "description": "Новое описание", "course": 1, "link_to_video": null, "preview": null}
+"""),
+            401: OpenApiResponse(description="Пользователь не авторизован."),
+            400: OpenApiResponse(description="""
+- Ошибка валидации данных.
+- Не указано одно или несколько обязательных полей "name", "description", "course".
+"""),
+            403: OpenApiResponse(
+                description="""
+- Необходимы права владельца или модератора
+- Запрещено присваивать уроки чужим курсам.
+""",
+            ),
+            404: OpenApiResponse(description="Урок не найден."),
+        },
+    ),
+)
+@method_decorator(
+    name="patch",
+    decorator=extend_schema(
+        summary="Частичное изменение урока",
+        responses={
+            200: OpenApiResponse(description="""
+{"id": 1, "name": "Обновленнный", "description": "Новое описание", "course": 1, "link_to_video": null, "preview": null}
+"""),
+            401: OpenApiResponse(description="Пользователь не авторизован."),
+            400: OpenApiResponse(description="Ошибка валидации данных."),
+            403: OpenApiResponse(
+                description="""
+- Необходимы права владельца или модератора
+- Запрещено присваивать уроки чужим курсам.
+""",
+            ),
+            404: OpenApiResponse(description="Урок не найден."),
+        },
+    ),
+)
 class LessonUpdateAPIView(generics.UpdateAPIView):
     """Контроллер изменения объекта урока"""
 
@@ -100,6 +239,18 @@ class LessonUpdateAPIView(generics.UpdateAPIView):
         serializer.save()
 
 
+@method_decorator(
+    name="delete",
+    decorator=extend_schema(
+        summary="Удаление урока",
+        responses={
+            204: OpenApiResponse(description='При удалении возвращается "пустой" объект response.'),
+            401: OpenApiResponse(description="Пользователь не авторизован."),
+            403: OpenApiResponse(description="Необходимы права владельца."),
+            404: OpenApiResponse(description="Урок не найден."),
+        },
+    ),
+)
 class LessonDestroyAPIView(generics.DestroyAPIView):
     """Контроллер удаления объекта урока"""
 
@@ -108,14 +259,58 @@ class LessonDestroyAPIView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated & IsOwner]
 
 
+@method_decorator(
+    name="get",
+    decorator=extend_schema(
+        summary="Отображение списка платежей с пагинацией и фильтрацией",
+        responses={
+            200: OpenApiResponse(description="""
+{"count": 1, "next": "http://localhost:8000/payments/?page=2&page_size=2", "previous": null, "results": [
+    {"id": 1,
+    "created_at": "2026-06-12T12:12:12.121212Z",
+    "amount": 111,
+    "method": "cash",
+    "payer": 1,
+    "paid_course": 1,
+    "paid_lesson": null},
+    {"id": 2,
+    "created_at": "2026-06-22T22:22:22.222222Z",
+    "amount": 333,
+    "method": "cashless",
+    "payer": 2,
+    "paid_course": null,
+    "paid_lesson": 2}]}
+"""),
+            401: OpenApiResponse(description="Пользователь не авторизован."),
+        },
+    ),
+)
 class PaymentListAPIView(generics.ListAPIView):
     """Контроллер списка платежей"""
 
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
     filterset_class = PaymentFilterSet
+    pagination_class = EducationPaginator
 
 
+@method_decorator(
+    name="post",
+    decorator=extend_schema(
+        summary="Создание подписки",
+        responses={
+            200: OpenApiResponse(description="Подписка оформлена."),
+            401: OpenApiResponse(description="Пользователь не авторизован."),
+            400: OpenApiResponse(description="""
+- Вы уже подписаны на данный курс.
+- Запрещено подписываться на собственный курс.
+"""),
+            404: OpenApiResponse(
+                description="Курс не найден.",
+            ),
+        },
+    ),
+)
 class SubscriptionActivateAPIView(APIView):
     """Контроллер активации подписки на курс"""
 
@@ -135,6 +330,17 @@ class SubscriptionActivateAPIView(APIView):
         return Response({"error": "Вы уже подписаны на данный курс."}, status=status.HTTP_400_BAD_REQUEST)
 
 
+@method_decorator(
+    name="delete",
+    decorator=extend_schema(
+        summary="Удаление подписки",
+        responses={
+            200: OpenApiResponse(description="Подписка отключена."),
+            401: OpenApiResponse(description="Пользователь не авторизован."),
+            404: OpenApiResponse(description="Подписка не найдена."),
+        },
+    ),
+)
 class SubscriptionDeactivateAPIView(APIView):
     """Контроллер удаления подписки на курс"""
 

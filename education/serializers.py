@@ -8,7 +8,9 @@ class LessonSerializer(serializers.ModelSerializer):
     """Сериализатор модели урока"""
 
     description = serializers.CharField(validators=[LinkValidator(["youtube.com"])])
-    link_to_video = serializers.URLField(validators=[LinkValidator(["youtube.com"])])
+    link_to_video = serializers.URLField(
+        validators=[LinkValidator(["youtube.com"])], required=False, allow_blank=True, allow_null=True
+    )
 
     class Meta:
         """Параметры сериализатора"""
