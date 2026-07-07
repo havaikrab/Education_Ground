@@ -24,7 +24,7 @@ class LessonSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         user = self.context["request"].user
         has_subscription = Subscription.objects.filter(subscriber=user, course=instance.course).exists()
-        paid = Payment.objects.filter(payer=user, paid_lesson=instance).exists()
+        paid = Payment.objects.filter(payer=user, stripe_product__lesson=instance).exists()
         if (
             instance.course.owner != user
             and not user.groups.filter(name="Модераторы").exists()
@@ -53,6 +53,7 @@ class CourseSerializer(serializers.ModelSerializer):
             "name",
             "preview",
             "description",
+            "usd_price",
             "owner",
             "relation_status",
             "lessons_count",

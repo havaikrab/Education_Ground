@@ -137,8 +137,7 @@ class StripeProduct(models.Model):
     def save(self, *args: Any, **kwargs: Any) -> None:
         """Сохранение продукта с денормализованными данными"""
 
-        if not self.pk:
-            self.__fill_snapshot_data()
+        self.__fill_snapshot_data()
         self.full_clean()
         super().save(*args, **kwargs)
 

@@ -16,9 +16,10 @@ from users.models import CustomUser
 from users.permissions import IsCourseSubscriber, IsModerator, IsOwner
 
 from .filters import CourseFilterSet, PaymentFilterSet
-from .models import Course, Lesson, Payment, Subscription
+from .models import Course, Lesson, Payment, StripeProduct, Subscription
 from .paginators import EducationPaginator
 from .serializers import CourseSerializer, LessonSerializer, PaymentSerializer
+from .services import get_stripe_course_data, get_stripe_lesson_data
 
 
 @extend_schema_view(
@@ -79,7 +80,16 @@ class CourseViewSet(ModelViewSet):
         """Указание авторизованного пользователя владельцем создаваемого курса"""
 
         user = self.request.user
-        serializer.save(owner=user)
+        course = serializer.save(owner=user)
+        stripe_data = get_stripe_course_data(course)
+        StripeProduct.objects.create(course=course, **stripe_data)
+
+    def perform_update(self, serializer: BaseSerializer) -> None:
+        """Создает новый актуальный Stripe-продукт при обновлении курса"""
+
+        course = serializer.save()
+        stripe_data = get_stripe_course_data(course)
+        StripeProduct.objects.create(course=course, **stripe_data)
 
     def get_permissions(self) -> Sequence:
         """Определение разрешений на использование функциональности контроллера"""
@@ -132,7 +142,9 @@ class LessonCreateAPIView(generics.CreateAPIView):
         course = serializer.validated_data.get("course")
         if course.owner != user:  # type: ignore
             raise PermissionDenied("Запрещено создавать уроки для чужих курсов")
-        serializer.save()
+        lesson = serializer.save()
+        stripe_data = get_stripe_lesson_data(lesson)
+        StripeProduct.objects.create(lesson=lesson, **stripe_data)
 
 
 @method_decorator(
@@ -236,7 +248,9 @@ class LessonUpdateAPIView(generics.UpdateAPIView):
         course = serializer.validated_data.get("course")
         if isinstance(course, Course) and lesson.course.owner != course.owner:
             raise PermissionDenied("У изменяемого урока и указанного курса должен быть один и тот же владелец")
-        serializer.save()
+        updated_lesson = serializer.save()
+        stripe_data = get_stripe_lesson_data(updated_lesson)
+        StripeProduct.objects.create(lesson=updated_lesson, **stripe_data)
 
 
 @method_decorator(
