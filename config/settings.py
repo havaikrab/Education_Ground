@@ -3,6 +3,7 @@ from datetime import timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
+from stripe import StripeClient
 
 load_dotenv(override=True)
 
@@ -127,3 +128,5 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }
+
+STRIPE_CLIENT = StripeClient(os.getenv("STRIPE_RESTRICTED_KEY", ""))

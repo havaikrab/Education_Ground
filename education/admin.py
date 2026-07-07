@@ -24,6 +24,6 @@ class LessonAdmin(admin.ModelAdmin):
 class PaymentAdmin(admin.ModelAdmin):
     """Класс представления модели платежа в админ-панели Django"""
 
-    list_display = ("id", "payer", "created_at", "paid_course", "paid_lesson", "amount", "method")
-    list_filter = ("payer", "paid_course", "paid_lesson", "method")
-    search_fields = ("payer", "paid_course", "paid_lesson")
+    list_display = ("id", "payer", "created_at", "stripe_product", "amount", "method")
+    list_filter = ("payer", "method")
+    search_fields = ("payer",)
