@@ -1,8 +1,10 @@
-from dotenv import load_dotenv
-from stripe.checkout import Session
+from urllib.parse import urljoin
 
-from config.settings import STRIPE_CLIENT
-from education.models import Course, Lesson, StripeProduct
+from dotenv import load_dotenv
+
+from config.settings import CURRENT_SITE, STRIPE_CLIENT
+from education.models import Course, Lesson, StripeProduct, StripeSession
+from users.models import CustomUser
 
 load_dotenv()
 
@@ -31,12 +33,29 @@ def get_stripe_lesson_data(lesson: Lesson) -> dict:
     return {"stripe_product_id": product["id"], "stripe_price_id": price["id"]}
 
 
-def get_stripe_session(product: StripeProduct) -> Session:
+def get_stripe_session(product: StripeProduct, user: CustomUser) -> StripeSession:
+    """Создает объект Stripe-сессии"""
+
     session = STRIPE_CLIENT.v1.checkout.sessions.create(
         {
-            "success_url": "https://example.com/success",
+            "success_url": urljoin(CURRENT_SITE, "/payment_success/?session_id={CHECKOUT_SESSION_ID}"),
+            "cancel_url": urljoin(CURRENT_SITE, "/courses/"),
             "line_items": [{"price": product.stripe_price_id, "quantity": 1}],
             "mode": "payment",
+            "client_reference_id": str(user.pk),
+            "metadata": {"product_type": product.product_type, "product_id": str(product.pk)},
         }
     )
+    stripe_session = StripeSession.objects.create(
+        session_id=session.id, session_url=session.url, customer=user, product=product
+    )
+    return stripe_session
+
+
+def update_stripe_session_status(session: StripeSession) -> StripeSession:
+    """Обновляет статус сессии в соответствии с данными в сервисе Stripe"""
+
+    stripe_session = STRIPE_CLIENT.v1.checkout.sessions.retrieve(session.session_id)
+    session.status = stripe_session["status"]
+    session.save()
     return session

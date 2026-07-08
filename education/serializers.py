@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Course, Lesson, Payment, Subscription
+from .models import Course, Lesson, Payment, StripeSession, Subscription
 from .validators import LinkValidator
 
 
@@ -124,3 +124,35 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         user = self.context["request"].user
         payments = subscription.course.course_payments.filter(payer=user)
         return sum([payment.amount for payment in payments])
+
+
+class StripeSessionSerializer(serializers.ModelSerializer):
+    """Сериализатор модели Stripe-сессии"""
+
+    product = serializers.SerializerMethodField()
+
+    class Meta:
+        """Параметры сериализатора"""
+
+        model = StripeSession
+        fields = "__all__"
+
+    def get_product(self, session: StripeSession) -> dict:
+        """Получение данных о продукте"""
+
+        product_type = None
+        product_id = None
+        if session.product.course:
+            product_type = "course"
+            product_id = session.product.course.pk
+        if session.product.lesson:
+            product_type = "lesson"
+            product_id = session.product.lesson.pk
+        product_name = session.product.product_name
+        product_price = session.product.product_price
+        return {
+            "product_type": product_type,
+            "product_id": product_id,
+            "product_name": product_name,
+            "product_price": product_price,
+        }

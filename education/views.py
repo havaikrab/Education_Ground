@@ -1,6 +1,7 @@
 from typing import Any, Sequence, cast
 
 from django.core.exceptions import PermissionDenied
+from django.db.models import QuerySet
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
@@ -16,10 +17,10 @@ from users.models import CustomUser
 from users.permissions import IsCourseSubscriber, IsModerator, IsOwner
 
 from .filters import CourseFilterSet, PaymentFilterSet
-from .models import Course, Lesson, Payment, StripeProduct, Subscription
+from .models import Course, Lesson, Payment, StripeProduct, StripeSession, Subscription
 from .paginators import EducationPaginator
-from .serializers import CourseSerializer, LessonSerializer, PaymentSerializer
-from .services import get_stripe_course_data, get_stripe_lesson_data, get_stripe_session
+from .serializers import CourseSerializer, LessonSerializer, PaymentSerializer, StripeSessionSerializer
+from .services import get_stripe_course_data, get_stripe_lesson_data, get_stripe_session, update_stripe_session_status
 
 
 @extend_schema_view(
@@ -311,9 +312,9 @@ class PaymentListAPIView(generics.ListAPIView):
 @method_decorator(
     name="post",
     decorator=extend_schema(
-        summary="Создание подписки",
+        summary="Оплата подписки",
         responses={
-            200: OpenApiResponse(description="Подписка оформлена."),
+            200: OpenApiResponse(description='{"session_url": "https://checkout.stripe.com/c/pay/<link_body>}'),
             401: OpenApiResponse(description="Пользователь не авторизован."),
             400: OpenApiResponse(description="""
 - Вы уже подписаны на данный курс.
@@ -325,25 +326,44 @@ class PaymentListAPIView(generics.ListAPIView):
         },
     ),
 )
-class SubscriptionActivateAPIView(APIView):
-    """Контроллер активации подписки на курс"""
+class OpenStripeSessionAPIView(APIView):
+    """Контроллер открытия Stripe-сессии для оплаты подписки на курс"""
 
-    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        """POST-запрос на создание объекта подписки"""
+    def post(self, request: Request, pk: int, *args: Any, **kwargs: Any) -> Response:
+        """POST-запрос на ссылку для оплаты"""
 
-        user = request.user
-        course_id = kwargs.get("pk")
-        course = get_object_or_404(Course, pk=course_id)
-        str_product = StripeProduct.objects.get(course=course, is_active=True)
-        session = get_stripe_session(str_product)
+        user = cast(CustomUser, request.user)
+        course = get_object_or_404(Course, pk=pk)
         if course.owner == user:
             return Response(
                 {"error": "Запрещено подписываться на собственный курс."}, status=status.HTTP_400_BAD_REQUEST
             )
-        subscription, created = Subscription.objects.get_or_create(subscriber=user, course=course)
-        if created:
-            return Response({"success_url": None, "session_url": session.url})
-        return Response({"error": "Вы уже подписаны на данный курс."}, status=status.HTTP_400_BAD_REQUEST)
+        if Subscription.objects.filter(subscriber=user, course=course).exists():
+            return Response({"error": "Вы уже подписаны на данный курс."}, status=status.HTTP_400_BAD_REQUEST)
+        str_product = StripeProduct.objects.get(course=course, is_active=True)
+        session = get_stripe_session(str_product, user)
+        return Response({"session_url": session.session_url})
+
+
+class StripeSessionRetrieveAPIView(generics.RetrieveAPIView):
+    """Эндпоинт успешной оплаты подписки"""
+
+    def get_queryset(self) -> QuerySet:
+        """Ограничение списка объектов для представления"""
+
+        user = cast(CustomUser, self.request.user)
+        return StripeSession.objects.filter(customer=user)
+
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """GET-запрос на получение данных сессии"""
+
+        session_id = request.GET.get("session_id")
+        if not session_id:
+            return Response({"error": "Параметр session_id не указан в url."}, status=status.HTTP_400_BAD_REQUEST)
+        stripe_session = get_object_or_404(StripeSession, session_id=session_id)
+        stripe_session = update_stripe_session_status(stripe_session)
+        serializer = StripeSessionSerializer(stripe_session)
+        return Response(serializer.data)
 
 
 @method_decorator(
