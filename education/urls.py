@@ -19,6 +19,7 @@ urlpatterns: list = [
     path("courses/<int:pk>/subscribe/", views.OpenStripeSessionAPIView.as_view(), name="subscribe"),
     path("payment_success/", views.StripeSessionRetrieveAPIView.as_view(), name="payment_success"),
     path("courses/<int:pk>/refuse/", views.SubscriptionDeactivateAPIView.as_view(), name="refuse"),
+    path("webhook/", views.StripeWebhookAPIView.as_view(), name="webhook"),
 ]
 
 urlpatterns += router.urls

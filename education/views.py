@@ -12,7 +12,9 @@ from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
+from stripe import SignatureVerificationError, Webhook
 
+from config.settings import STRIPE_WEBHOOK_SECRET
 from users.models import CustomUser
 from users.permissions import IsCourseSubscriber, IsModerator, IsOwner
 
@@ -20,7 +22,13 @@ from .filters import CourseFilterSet, PaymentFilterSet
 from .models import Course, Lesson, Payment, StripeProduct, StripeSession, Subscription
 from .paginators import EducationPaginator
 from .serializers import CourseSerializer, LessonSerializer, PaymentSerializer, StripeSessionSerializer
-from .services import get_stripe_course_data, get_stripe_lesson_data, get_stripe_session, update_stripe_session_status
+from .services import (
+    get_stripe_course_data,
+    get_stripe_lesson_data,
+    get_stripe_session,
+    parse_webhook_event,
+    update_stripe_session_status,
+)
 
 
 @extend_schema_view(
@@ -364,6 +372,29 @@ class StripeSessionRetrieveAPIView(generics.RetrieveAPIView):
         stripe_session = update_stripe_session_status(stripe_session)
         serializer = StripeSessionSerializer(stripe_session)
         return Response(serializer.data)
+
+
+class StripeWebhookAPIView(generics.CreateAPIView):
+    """Контроллер автоматической обработки вебхуков"""
+
+    authentication_classes = []
+    permission_classes = []
+
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Получение Event-объекта от Stripe-вебхука"""
+
+        payload = request.body
+        sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
+        try:
+            event = Webhook.construct_event(payload, sig_header, STRIPE_WEBHOOK_SECRET)
+        except ValueError:
+            return Response({"error": "Некорректная структура данных."}, status=status.HTTP_400_BAD_REQUEST)
+        except SignatureVerificationError:
+            return Response({"error": "Невалидная Stripe-подпись."}, status=status.HTTP_400_BAD_REQUEST)
+
+        parse_webhook_event(event)
+
+        return Response(status=status.HTTP_200_OK)
 
 
 @method_decorator(
