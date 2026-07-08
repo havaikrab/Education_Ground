@@ -1,7 +1,8 @@
 from dotenv import load_dotenv
+from stripe.checkout import Session
 
 from config.settings import STRIPE_CLIENT
-from education.models import Course, Lesson
+from education.models import Course, Lesson, StripeProduct
 
 load_dotenv()
 
@@ -28,3 +29,14 @@ def get_stripe_lesson_data(lesson: Lesson) -> dict:
         {"currency": "usd", "unit_amount": lesson.usd_price, "product": product["id"]}
     )
     return {"stripe_product_id": product["id"], "stripe_price_id": price["id"]}
+
+
+def get_stripe_session(product: StripeProduct) -> Session:
+    session = STRIPE_CLIENT.v1.checkout.sessions.create(
+        {
+            "success_url": "https://example.com/success",
+            "line_items": [{"price": product.stripe_price_id, "quantity": 1}],
+            "mode": "payment",
+        }
+    )
+    return session

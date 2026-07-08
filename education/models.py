@@ -142,6 +142,33 @@ class StripeProduct(models.Model):
         super().save(*args, **kwargs)
 
 
+class StripeSession(models.Model):
+    """Модель Stripe-сессии"""
+
+    session_id: models.CharField = models.CharField(unique=True, max_length=255, verbose_name="Идентификатор сессии")
+    session_url: models.URLField = models.URLField(max_length=400, verbose_name="Ссылка на оплату")
+    customer: models.ForeignKey = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name="sessions", verbose_name="Заказчик"
+    )
+    product: models.ForeignKey = models.ForeignKey(
+        StripeProduct, on_delete=models.CASCADE, related_name="stripe_sessions", verbose_name="Продукт"
+    )
+    STATUS_CHOICES = [("open", "Открыта"), ("complete", "Завершена"), ("expired", "Просрочена")]
+    status: models.CharField = models.CharField(max_length=8, choices=STATUS_CHOICES, verbose_name="Статус сессии")
+
+    class Meta:
+        """Класс настроек отображения"""
+
+        verbose_name = "Stripe-сессия"
+        verbose_name_plural = "Stripe-сессии"
+        ordering = ["-status"]
+
+    def __str__(self) -> str:
+        """Строковое отображение Stripe-сессии"""
+
+        return str(self.session_id)
+
+
 class Payment(models.Model):
     """Модель платежа"""
 

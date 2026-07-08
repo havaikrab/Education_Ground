@@ -19,7 +19,7 @@ from .filters import CourseFilterSet, PaymentFilterSet
 from .models import Course, Lesson, Payment, StripeProduct, Subscription
 from .paginators import EducationPaginator
 from .serializers import CourseSerializer, LessonSerializer, PaymentSerializer
-from .services import get_stripe_course_data, get_stripe_lesson_data
+from .services import get_stripe_course_data, get_stripe_lesson_data, get_stripe_session
 
 
 @extend_schema_view(
@@ -334,13 +334,15 @@ class SubscriptionActivateAPIView(APIView):
         user = request.user
         course_id = kwargs.get("pk")
         course = get_object_or_404(Course, pk=course_id)
+        str_product = StripeProduct.objects.get(course=course, is_active=True)
+        session = get_stripe_session(str_product)
         if course.owner == user:
             return Response(
                 {"error": "Запрещено подписываться на собственный курс."}, status=status.HTTP_400_BAD_REQUEST
             )
         subscription, created = Subscription.objects.get_or_create(subscriber=user, course=course)
         if created:
-            return Response({"message": "Подписка оформлена"})
+            return Response({"success_url": None, "session_url": session.url})
         return Response({"error": "Вы уже подписаны на данный курс."}, status=status.HTTP_400_BAD_REQUEST)
 
 
