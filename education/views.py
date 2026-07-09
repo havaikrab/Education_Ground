@@ -1,7 +1,6 @@
 from typing import Any, Sequence, cast
 
 from django.core.exceptions import PermissionDenied
-from django.db.models import QuerySet
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
@@ -321,6 +320,13 @@ class PaymentListAPIView(generics.ListAPIView):
     name="post",
     decorator=extend_schema(
         summary="Оплата подписки",
+        description="""
+Данный контроллер открывает stripe-сессию для оплаты подписки пользователя на определенный курс.
+Предварительно проходит проверка отношений объектов пользователя и выбранного курса.
+После удачной проверки в БД создается объект сессии, а клиенту возвращается ссылка на оплату.
+Подписка становится доступной пользователю только после подтверждения оплаты сервисом Stripe.
+Обработка подтверждений происходит автоматически в webhook-эндпоинте.
+""",
         responses={
             200: OpenApiResponse(description='{"session_url": "https://checkout.stripe.com/c/pay/<link_body>}'),
             401: OpenApiResponse(description="Пользователь не авторизован."),
@@ -353,27 +359,64 @@ class OpenStripeSessionAPIView(APIView):
         return Response({"session_url": session.session_url})
 
 
+@method_decorator(
+    name="get",
+    decorator=extend_schema(
+        summary="Детали сессии",
+        description="""
+Необходима авторизация. Пользователю доступны только открытые им самим сессии.
+Используется для редиректа после оплаты продукта и отслеживания статуса платежа.
+""",
+        responses={
+            200: OpenApiResponse(description="""
+{"id": 11, "product": {"product_type": "course", "product_id": 3, "product_name": "course_3", "product_price": 33333},
+"session_id": "<stripe_session_id>", "status": "open", "customer": 1,
+"session_url": "https://checkout.stripe.com/c/pay/<link-body>"}
+"""),
+            401: OpenApiResponse(description="Пользователь не авторизован."),
+            404: OpenApiResponse(description="Сессия не найдена."),
+        },
+    ),
+)
 class StripeSessionRetrieveAPIView(generics.RetrieveAPIView):
     """Эндпоинт успешной оплаты подписки"""
-
-    def get_queryset(self) -> QuerySet:
-        """Ограничение списка объектов для представления"""
-
-        user = cast(CustomUser, self.request.user)
-        return StripeSession.objects.filter(customer=user)
 
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """GET-запрос на получение данных сессии"""
 
+        user = request.user
         session_id = request.GET.get("session_id")
         if not session_id:
             return Response({"error": "Параметр session_id не указан в url."}, status=status.HTTP_400_BAD_REQUEST)
-        stripe_session = get_object_or_404(StripeSession, session_id=session_id)
+        stripe_session = get_object_or_404(StripeSession, session_id=session_id, customer=user)
         stripe_session = update_stripe_session_status(stripe_session)
         serializer = StripeSessionSerializer(stripe_session)
         return Response(serializer.data)
 
 
+@method_decorator(
+    name="post",
+    decorator=extend_schema(
+        summary="Обработчик Stripe-вебхуков",
+        description="""
+Данный контроллер не предназначен для взаимодействия с пользователем.
+Обработчик ожидает event-объект от сервиса Stripe, в котором передаются сведения о ранее открытой сессии.
+После поступившего post-запроса статус объекта сессии сменяется на "expired" или "complete".
+"expired" - означает, что время сессии истекло и платеж не может больше быть осуществлен.
+При "complete" в БД сохраняется информация о платеже, а пользователю становится доступен соответствующий продукт.
+""",
+        responses={
+            200: OpenApiResponse(description='Возвращается "пустой" объект response.'),
+            400: OpenApiResponse(description="""
+- Маловероятное поступление некорректных данных от Stripe.
+- Передача злоумышленником данных с невалидной Stripe-подписью.
+"""),
+            404: OpenApiResponse(
+                description="Курс не найден.",
+            ),
+        },
+    ),
+)
 class StripeWebhookAPIView(generics.CreateAPIView):
     """Контроллер автоматической обработки вебхуков"""
 

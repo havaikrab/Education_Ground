@@ -3,8 +3,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from config import test_data
-from education.models import Course, Lesson, StripeProduct
+from education.models import Course, Lesson, StripeProduct, StripeSession, Subscription
 from users.models import CustomUser
 
 
@@ -511,84 +510,150 @@ class PaymentTestCase(APITestCase):
         total_sum = sum([payment["amount"] for payment in data["results"]])
         self.assertEqual(total_sum, 13000)
 
+    def test_other_getting_lessons_payments_list(self) -> None:
+        """Тест запроса на отображение списка объектов модели Payment с применением фильтрации"""
 
-class SubscriptionTestCase(APITestCase):
-    """Группа тестов связанных с обработкой объектов модели Subscription"""
+        url = "/payments/?paid_lesson=1&paid_course=33"
+        response = self.client.get(url)
+        data = response.json()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(data["results"]), 1)
+        self.assertEqual(data["results"][0]["amount"], 15000)
+
+class StripeSessionSubscriptionTestCase(APITestCase):
+    """Группа тестов связанных с обработкой объектов моделей StripeSession и Subscription"""
+
+    fixtures = [
+        "course_fixture.json",
+        "customuser_fixture.json",
+        "lesson_fixture.json",
+        "stripeproduct_fixture.json",
+        "stripesession_fixture.json",
+        "subscription_fixture.json",
+    ]
 
     def setUp(self) -> None:
         """Наполнение БД тестовыми данными"""
 
-        test_data.set_subscriptions_data()
-        self.user = CustomUser.objects.get(email="user_1@mail.py")
+        self.user = CustomUser.objects.get(email="user_5@mail.py")
         self.client.force_authenticate(user=self.user)
 
-    def test_subscription_activating(self) -> None:
-        """Тест запроса на получение пользователем подписки на курс"""
+    def test_own_session_retrieve(self) -> None:
+        """Тест запроса на просмотр собственной сессии"""
 
-        url = f"/users/{self.user.pk}/"
-
+        session = StripeSession.objects.get(pk=1)
+        url = f"/payment_success/?session_id={session.session_id}"
         response = self.client.get(url)
         data = response.json()
-        subscriptions = set()
-        for subscription in data["subscriptions"]:
-            subscriptions.add(subscription["course_name"])
-        self.assertEqual(subscriptions, {"course_8", "course_9", "course_10"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            data,
+            {
+                "id": 1,
+                "session_id": "cs_test_a1Nks8Tc82jfQ71knHenRlmEh1gfJGePOrQ0oSFejoZBUecP4hKTquyAAy",
+                "session_url": "https://checkout.stripe.com/c/pay/cs_test_endless_link_001",
+                "customer": 5,
+                "product": {
+                    "product_type": "course",
+                    "product_id": 10,
+                    "product_name": "course_10",
+                    "product_price": 11111,
+                },
+                "status": "complete",
+            },
+        )
 
-        course = Course.objects.get(name="course_7")
-        activating_url = f"/courses/{course.pk}/subscribe/"
-        activating_response = self.client.post(activating_url)
-        self.assertEqual(activating_response.status_code, status.HTTP_200_OK)
-        self.assertEqual(activating_response.data, {"message": "Подписка оформлена"})
+    def test_session_status_auto_updating(self) -> None:
+        """Тест запроса на просмотр собственной сессии с истекшим сроком годности"""
 
-        result_response = self.client.get(url)
-        result_data = result_response.json()
-        result_subscriptions = set()
-        for subscription in result_data["subscriptions"]:
-            result_subscriptions.add(subscription["course_name"])
-        self.assertEqual(result_subscriptions, {"course_7", "course_8", "course_9", "course_10"})
+        session = StripeSession.objects.get(pk=2)
+        url = f"/payment_success/?session_id={session.session_id}"
+        response = self.client.get(url)
+        data = response.json()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            data,
+            {
+                "id": 2,
+                "session_id": "cs_test_a12XCQTC6otGUIw17j5obwjYlWjW03pqrOmfr5Iji3UGHXHmYnxa521lZG",
+                "session_url": "https://checkout.stripe.com/c/pay/cs_test_endless_link_002",
+                "customer": 5,
+                "product": {
+                    "product_type": "course",
+                    "product_id": 9,
+                    "product_name": "course_9",
+                    "product_price": 22222,
+                },
+                "status": "expired",
+            },
+        )
+
+    def test_session_forbidden(self) -> None:
+        """Тест запроса на просмотр чужой сессии"""
+
+        session = StripeSession.objects.get(pk=3)
+        url = f"/payment_success/?session_id={session.session_id}"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_session_invalid_id(self) -> None:
+        """Тест запроса без параметра session_id"""
+
+        url = f"/payment_success/?pk=1"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, {"error": "Параметр session_id не указан в url."})
+
+    def test_session_opening(self) -> None:
+        """Тест запроса на открытие сессии для оплаты подписки на курс"""
+
+        self.assertEqual(len(StripeSession.objects.all()), 3)
+        course = Course.objects.get(name="course_2")
+        url = f"/courses/{course.pk}/subscribe/"
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+        self.assertEqual(len(data), 1)
+        self.assertEqual(len(StripeSession.objects.all()), 4)
+        new_session = StripeSession.objects.get(product__course=course)
+        link_start = data["session_url"][:34]
+        self.assertEqual(link_start, "https://checkout.stripe.com/c/pay/")
+        self.assertEqual(new_session.session_url, data["session_url"])
 
     def test_subscription_own_course_activating(self) -> None:
         """Тест попытки запроса на получение пользователем подписки на собственный курс"""
 
+        self.assertEqual(len(StripeSession.objects.all()), 3)
+        user = CustomUser.objects.get(email="user_1@mail.py")
+        self.client.force_authenticate(user=user)
         course = Course.objects.get(name="course_1")
         url = f"/courses/{course.pk}/subscribe/"
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data, {"error": "Запрещено подписываться на собственный курс."})
+        self.assertEqual(len(StripeSession.objects.all()), 3)
 
     def test_subscription_repeat_course_activating(self) -> None:
         """Тест попытки запроса на повторное получение пользователем уже имеющейся подписки на курс"""
 
+        self.assertEqual(len(StripeSession.objects.all()), 3)
         course = Course.objects.get(name="course_10")
         url = f"/courses/{course.pk}/subscribe/"
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data, {"error": "Вы уже подписаны на данный курс."})
+        self.assertEqual(len(StripeSession.objects.all()), 3)
 
     def test_subscription_deactivating(self) -> None:
         """Тест запроса на отказ пользователя от подписки на курс"""
 
-        url = f"/users/{self.user.pk}/"
-
-        response = self.client.get(url)
-        data = response.json()
-        subscriptions = set()
-        for subscription in data["subscriptions"]:
-            subscriptions.add(subscription["course_name"])
-        self.assertEqual(subscriptions, {"course_8", "course_9", "course_10"})
-
-        course = Course.objects.get(name="course_9")
-        deactivating_url = f"/courses/{course.pk}/refuse/"
-        deactivating_response = self.client.delete(deactivating_url)
-        self.assertEqual(deactivating_response.status_code, status.HTTP_200_OK)
-        self.assertEqual(deactivating_response.data, {"message": "Подписка отключена."})
-
-        result_response = self.client.get(url)
-        result_data = result_response.json()
-        result_subscriptions = set()
-        for subscription in result_data["subscriptions"]:
-            result_subscriptions.add(subscription["course_name"])
-        self.assertEqual(result_subscriptions, {"course_8", "course_10"})
+        self.assertEqual(len(Subscription.objects.all()), 2)
+        course = Course.objects.get(name="course_10")
+        url = f"/courses/{course.pk}/refuse/"
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, {"message": "Подписка отключена."})
+        self.assertEqual(len(Subscription.objects.all()), 1)
 
     def test_not_existing_subscription_deactivating(self) -> None:
         """Тест попытки запроса на отказ пользователя от несуществующей подписки на курс"""
