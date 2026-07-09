@@ -182,10 +182,11 @@ class CourseTestCase(APITestCase):
 class LessonTestCase(APITestCase):
     """Группа тестов связанных с обработкой объектов модели Lesson"""
 
+    fixtures = ["course_fixture.json", "customuser_fixture.json", "lesson_fixture.json"]
+
     def setUp(self) -> None:
         """Наполнение БД тестовыми данными"""
 
-        test_data.set_lessons_data()
         self.moderators = Group.objects.create(name="Модераторы")
         self.user = CustomUser.objects.get(email="user_3@mail.py")
         self.client.force_authenticate(user=self.user)
@@ -202,6 +203,7 @@ class LessonTestCase(APITestCase):
                 "description": "test_description",
                 "link_to_video": "https://youtube.com/test_lesson",
                 "course": course.pk,
+                "usd_price": 999,
             },
         )
         data = response.json()
@@ -224,6 +226,7 @@ class LessonTestCase(APITestCase):
                 "description": "test_description",
                 "link_to_video": "https://youtube.com/test_lesson",
                 "course": course.pk,
+                "usd_price": 333,
             },
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
@@ -240,6 +243,7 @@ class LessonTestCase(APITestCase):
                 "description": "test_description",
                 "link_to_video": "https://youtube.com/test_lesson",
                 "course": course.pk,
+                "usd_price": 888,
             },
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
@@ -253,6 +257,7 @@ class LessonTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(data["results"]), 10)
         self.assertEqual(data["count"], 15)
+        prices_sum = 0
         for i in range(10):
             lesson = data["results"][i]
             description = lesson.get("description")
@@ -263,6 +268,8 @@ class LessonTestCase(APITestCase):
                 self.assertEqual(
                     (description, link), (f"description of lesson_{i + 1}", f"youtube.com/lesson_{i + 1}")
                 )
+            prices_sum += lesson["usd_price"]
+        self.assertEqual(prices_sum, 105000)
 
     def test_lesson_retrieve_by_moderator(self) -> None:
         """Тест запроса на просмотр объекта модели Lesson пользователем-модератором"""
@@ -281,6 +288,7 @@ class LessonTestCase(APITestCase):
                 "preview": None,
                 "link_to_video": "youtube.com/lesson_13",
                 "course": lesson.course.pk,
+                "usd_price": 3000,
             },
         )
 
@@ -306,6 +314,7 @@ class LessonTestCase(APITestCase):
                 "description": "updated_description",
                 "link_to_video": "https://youtube.com/lesson_15",
                 "course": other_course.pk,
+                "usd_price": 888,
             },
         )
         data = response.json()
@@ -319,6 +328,7 @@ class LessonTestCase(APITestCase):
                 "preview": None,
                 "link_to_video": "https://youtube.com/lesson_15",
                 "course": other_course.pk,
+                "usd_price": 888,
             },
         )
 
