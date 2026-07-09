@@ -4,14 +4,14 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from config import test_data
-from education.models import Course, Lesson
+from education.models import Course, Lesson, StripeProduct
 from users.models import CustomUser
 
 
 class CourseTestCase(APITestCase):
     """Группа тестов связанных с обработкой объектов модели Course"""
 
-    fixtures = ["course_fixture.json", "customuser_fixture.json"]
+    fixtures = ["course_fixture.json", "customuser_fixture.json", "lesson_fixture.json", "stripeproduct_fixture.json"]
 
     def setUp(self) -> None:
         """Наполнение БД тестовыми данными"""
@@ -23,6 +23,7 @@ class CourseTestCase(APITestCase):
     def test_course_creating(self) -> None:
         """Тест запроса на создание объекта модели Course"""
 
+        self.assertEqual(len(StripeProduct.objects.all()), 25)
         url = reverse("education:course-list")
         response = self.client.post(
             url,
@@ -38,6 +39,12 @@ class CourseTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(data.get("owner"), self.user.pk)
         self.assertEqual(data.get("name"), "test_course")
+        self.assertEqual(len(StripeProduct.objects.all()), 26)
+        stripe_product = StripeProduct.objects.get(course__name="test_course")
+        self.assertEqual(stripe_product.lesson, None)
+        self.assertEqual(stripe_product.is_active, True)
+        self.assertEqual(stripe_product.owner_email, "user_4@mail.py")
+        self.assertEqual(stripe_product.product_price, 555)
 
     def test_course_creating_with_invalid_link(self) -> None:
         """Тест запроса с невалидными данными на создание объекта модели Course"""
@@ -105,8 +112,18 @@ class CourseTestCase(APITestCase):
                 "description": f"{course.description}",
                 "owner": course.owner.pk,
                 "preview": None,
-                "lessons_count": 0,
-                "lessons_details": [],
+                "lessons_count": 1,
+                "lessons_details": [
+                    {
+                        "id": 1,
+                        "description": "description of lesson_1",
+                        "link_to_video": "youtube.com/lesson_1",
+                        "name": "lesson_1",
+                        "preview": None,
+                        "usd_price": 15000,
+                        "course": 1,
+                    }
+                ],
                 "relation_status": "undefined",
                 "usd_price": 111111,
             },
@@ -115,7 +132,12 @@ class CourseTestCase(APITestCase):
     def test_course_updating(self) -> None:
         """Тест запроса на изменение объекта модели Course владельцем"""
 
+        self.assertEqual(len(StripeProduct.objects.all()), 25)
         course = Course.objects.get(name="course_10")
+        self.assertEqual(len(StripeProduct.objects.filter(course=course)), 1)
+        stripe_product = StripeProduct.objects.get(course=course)
+        self.assertEqual(stripe_product.is_active, True)
+        product_id = stripe_product.pk
         url = f"/courses/{course.pk}/"
         response = self.client.put(
             url, {"name": "updated_course", "description": "updated_description", "usd_price": 11111}
@@ -130,18 +152,47 @@ class CourseTestCase(APITestCase):
                 "description": "updated_description",
                 "owner": self.user.pk,
                 "preview": None,
-                "lessons_count": 0,
-                "lessons_details": [],
+                "lessons_count": 2,
+                "lessons_details": [
+                    {
+                        "id": 14,
+                        "description": "description of lesson_14",
+                        "link_to_video": "youtube.com/lesson_14",
+                        "name": "lesson_14",
+                        "preview": None,
+                        "usd_price": 2000,
+                        "course": 10,
+                    },
+                    {
+                        "id": 15,
+                        "description": "description of lesson_15",
+                        "link_to_video": "youtube.com/lesson_15",
+                        "name": "lesson_15",
+                        "preview": None,
+                        "usd_price": 1000,
+                        "course": 10,
+                    },
+                ],
                 "relation_status": "owner",
                 "usd_price": 11111,
             },
         )
+        self.assertEqual(len(StripeProduct.objects.all()), 26)
+        self.assertEqual(len(StripeProduct.objects.filter(course=course)), 2)
+        self.assertEqual(len(StripeProduct.objects.filter(course=course, is_active=True)), 1)
+        old_product = StripeProduct.objects.get(pk=product_id)
+        self.assertEqual(old_product.is_active, False)
 
     def test_course_partial_updating_by_moderator(self) -> None:
         """Тест запроса на изменение объекта модели Course модератором"""
 
-        course = Course.objects.get(name="course_3")
+        self.assertEqual(len(StripeProduct.objects.all()), 25)
+        course = Course.objects.get(name="course_4")
         self.user.groups.add(self.moderators)
+        self.assertEqual(len(StripeProduct.objects.filter(course=course)), 1)
+        stripe_product = StripeProduct.objects.get(course=course)
+        self.assertEqual(stripe_product.is_active, True)
+        product_id = stripe_product.pk
         url = f"/courses/{course.pk}/"
         response = self.client.patch(url, {"name": "updated_by_moderator"})
         data = response.json()
@@ -151,15 +202,20 @@ class CourseTestCase(APITestCase):
             {
                 "id": course.pk,
                 "name": "updated_by_moderator",
-                "description": "description of course_3",
+                "description": "description of course_4",
                 "owner": course.owner.pk,
                 "preview": None,
                 "lessons_count": 0,
                 "lessons_details": [],
                 "relation_status": "undefined",
-                "usd_price": 88888,
+                "usd_price": 77777,
             },
         )
+        self.assertEqual(len(StripeProduct.objects.all()), 26)
+        self.assertEqual(len(StripeProduct.objects.filter(course=course)), 2)
+        self.assertEqual(len(StripeProduct.objects.filter(course=course, is_active=True)), 1)
+        old_product = StripeProduct.objects.get(pk=product_id)
+        self.assertEqual(old_product.is_active, False)
 
     def test_course_forbidden_destroy(self) -> None:
         """Тест неудачной попытки запроса на удаление объекта модели Course модератором"""
@@ -173,16 +229,25 @@ class CourseTestCase(APITestCase):
     def test_course_destroy(self) -> None:
         """Тест успешного запроса на удаление объекта модели Course его владельцем"""
 
+        self.assertEqual(len(StripeProduct.objects.all()), 25)
         course = Course.objects.get(name="course_8")
+        self.assertEqual(len(StripeProduct.objects.filter(course=course)), 1)
+        stripe_product = StripeProduct.objects.get(course=course)
+        product_id = stripe_product.pk
         url = f"/courses/{course.pk}/"
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(len(StripeProduct.objects.all()), 25)
+        updated_stripe_product = StripeProduct.objects.get(pk=product_id)
+        self.assertEqual(updated_stripe_product.product_name, "course_8")
+        self.assertEqual(updated_stripe_product.product_type, "course")
+        self.assertEqual(updated_stripe_product.course, None)
 
 
 class LessonTestCase(APITestCase):
     """Группа тестов связанных с обработкой объектов модели Lesson"""
 
-    fixtures = ["course_fixture.json", "customuser_fixture.json", "lesson_fixture.json"]
+    fixtures = ["course_fixture.json", "customuser_fixture.json", "lesson_fixture.json", "stripeproduct_fixture.json"]
 
     def setUp(self) -> None:
         """Наполнение БД тестовыми данными"""
@@ -194,6 +259,7 @@ class LessonTestCase(APITestCase):
     def test_lesson_creating(self) -> None:
         """Тест запроса на создание объекта модели Lesson"""
 
+        self.assertEqual(len(StripeProduct.objects.all()), 25)
         url = reverse("education:lesson_create")
         course = Course.objects.get(name="course_6")
         response = self.client.post(
@@ -212,6 +278,12 @@ class LessonTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(data.get("course"), course.pk)
         self.assertEqual(data.get("name"), "test_lesson")
+        self.assertEqual(len(StripeProduct.objects.all()), 26)
+        stripe_product = StripeProduct.objects.get(lesson__name="test_lesson")
+        self.assertEqual(stripe_product.course, None)
+        self.assertEqual(stripe_product.is_active, True)
+        self.assertEqual(stripe_product.owner_email, "user_3@mail.py")
+        self.assertEqual(stripe_product.product_price, 999)
 
     def test_lesson_creating_by_moderator(self) -> None:
         """Тест попытки запроса на создание объекта модели Lesson модератором"""
@@ -234,6 +306,7 @@ class LessonTestCase(APITestCase):
     def test_lesson_creating_not_for_own_course(self) -> None:
         """Тест попытки запроса на создание объекта модели Lesson для чужого курса"""
 
+        self.assertEqual(len(StripeProduct.objects.all()), 25)
         url = reverse("education:lesson_create")
         course = Course.objects.get(name="course_7")
         response = self.client.post(
@@ -247,6 +320,7 @@ class LessonTestCase(APITestCase):
             },
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(len(StripeProduct.objects.all()), 25)
 
     def test_getting_lessons_list(self) -> None:
         """Тест запроса на отображение списка объектов модели Lesson"""
@@ -303,9 +377,14 @@ class LessonTestCase(APITestCase):
     def test_lesson_updating_by_moderator(self) -> None:
         """Тест запроса на изменение объекта модели Lesson пользователем-модератором"""
 
+        self.assertEqual(len(StripeProduct.objects.all()), 25)
         self.user.groups.add(self.moderators)
         lesson = Lesson.objects.get(name="lesson_15")
         other_course = Course.objects.get(name="course_8")
+        self.assertEqual(len(StripeProduct.objects.filter(lesson=lesson)), 1)
+        stripe_product = StripeProduct.objects.get(lesson=lesson)
+        product_id = stripe_product.pk
+        self.assertEqual(stripe_product.is_active, True)
         url = f"/lessons/update/{lesson.pk}/"
         response = self.client.put(
             url,
@@ -331,6 +410,11 @@ class LessonTestCase(APITestCase):
                 "usd_price": 888,
             },
         )
+        self.assertEqual(len(StripeProduct.objects.all()), 26)
+        self.assertEqual(len(StripeProduct.objects.filter(lesson=lesson)), 2)
+        self.assertEqual(len(StripeProduct.objects.filter(lesson=lesson, is_active=True)), 1)
+        old_product = StripeProduct.objects.get(pk=product_id)
+        self.assertEqual(old_product.is_active, False)
 
     def test_lesson_forbidden_updating(self) -> None:
         """Тест попытки запроса на изменение объекта модели Lesson пользователем не имеющим прав"""
@@ -363,10 +447,19 @@ class LessonTestCase(APITestCase):
     def test_lesson_destroy(self) -> None:
         """Тест запроса на удаление объекта модели Lesson владельцем"""
 
+        self.assertEqual(len(StripeProduct.objects.all()), 25)
         lesson = Lesson.objects.get(name="lesson_9")
+        self.assertEqual(len(StripeProduct.objects.filter(lesson=lesson)), 1)
+        stripe_product = StripeProduct.objects.get(lesson=lesson)
+        product_id = stripe_product.pk
         url = f"/lessons/delete/{lesson.pk}/"
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(len(StripeProduct.objects.all()), 25)
+        updated_stripe_product = StripeProduct.objects.get(pk=product_id)
+        self.assertEqual(updated_stripe_product.product_name, "lesson_9")
+        self.assertEqual(updated_stripe_product.product_type, "lesson")
+        self.assertEqual(updated_stripe_product.lesson, None)
 
     def test_lesson_destroy_by_moderator(self) -> None:
         """Тест попытки запроса на удаление объекта модели Lesson модератором"""
