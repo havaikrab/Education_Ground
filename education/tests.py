@@ -474,10 +474,17 @@ class LessonTestCase(APITestCase):
 class PaymentTestCase(APITestCase):
     """Группа тестов связанных с обработкой объектов модели Payment"""
 
+    fixtures = [
+        "course_fixture.json",
+        "customuser_fixture.json",
+        "lesson_fixture.json",
+        "payment_fixture.json",
+        "stripeproduct_fixture.json",
+    ]
+
     def setUp(self) -> None:
         """Наполнение БД тестовыми данными"""
 
-        test_data.set_payments_data()
         self.user = CustomUser.objects.get(email="user_5@mail.py")
         self.client.force_authenticate(user=self.user)
 
@@ -489,9 +496,9 @@ class PaymentTestCase(APITestCase):
         response = self.client.get(url)
         data = response.json()
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(data), 2)
-        total_sum = sum([payment["amount"] for payment in data])
-        self.assertEqual(total_sum, 2200)
+        self.assertEqual(len(data["results"]), 2)
+        total_sum = sum([payment["amount"] for payment in data["results"]])
+        self.assertEqual(total_sum, 44444)
 
     def test_getting_lessons_payments_list(self) -> None:
         """Тест запроса на отображение списка объектов модели Payment с применением фильтрации"""
@@ -500,9 +507,9 @@ class PaymentTestCase(APITestCase):
         response = self.client.get(url)
         data = response.json()
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(data), 3)
-        total_sum = sum([payment["amount"] for payment in data])
-        self.assertEqual(total_sum, 800)
+        self.assertEqual(len(data["results"]), 3)
+        total_sum = sum([payment["amount"] for payment in data["results"]])
+        self.assertEqual(total_sum, 13000)
 
 
 class SubscriptionTestCase(APITestCase):
