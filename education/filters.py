@@ -69,7 +69,7 @@ class CourseFilterSet(FilterSet):
         request = cast(Request, self.request)
         user = cast(CustomUser, request.user)
         if value is True:
-            return queryset.filter(course_payments__payer=user).distinct()
+            return queryset.filter(stripe_courses__stripe_payments__payer=user).distinct()
         elif value is False:
-            return queryset.exclude(course_payments__payer=user)
+            return queryset.exclude(stripe_courses__stripe_payments__payer=user)
         return queryset

@@ -179,7 +179,11 @@ class Payment(models.Model):
     )
     created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True, verbose_name="Дата платежа")
     stripe_product: models.ForeignKey = models.ForeignKey(
-        StripeProduct, null=True, on_delete=models.SET_NULL, related_name="payments", verbose_name="Оплаченный продукт"
+        StripeProduct,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="stripe_payments",
+        verbose_name="Оплаченный продукт",
     )
     amount: models.PositiveIntegerField = models.PositiveIntegerField(verbose_name="Сумма платежа")
     METHOD_CHOICES = [("cash", "Наличными"), ("cashless", "Перевод")]

@@ -11,10 +11,11 @@ from users.models import CustomUser
 class CourseTestCase(APITestCase):
     """Группа тестов связанных с обработкой объектов модели Course"""
 
+    fixtures = ["course_fixture.json", "customuser_fixture.json"]
+
     def setUp(self) -> None:
         """Наполнение БД тестовыми данными"""
 
-        test_data.set_courses_data()
         self.moderators = Group.objects.create(name="Модераторы")
         self.user = CustomUser.objects.get(email="user_4@mail.py")
         self.client.force_authenticate(user=self.user)
@@ -24,7 +25,12 @@ class CourseTestCase(APITestCase):
 
         url = reverse("education:course-list")
         response = self.client.post(
-            url, data={"name": "test_course", "description": "test_description with valid link https://youtube.com"}
+            url,
+            data={
+                "name": "test_course",
+                "description": "test_description with valid link https://youtube.com",
+                "usd_price": 555,
+            },
         )
         data = response.json()
         courses_count = Course.objects.count()
@@ -59,18 +65,20 @@ class CourseTestCase(APITestCase):
         """Тест запроса на отображение чужого списка объектов модели Course"""
 
         random_user = CustomUser.objects.get(username="user_3")
-        random_pk = random_user.pk
-        url = f"/courses/?owner={random_pk}"
+        url = f"/courses/?owner={random_user.pk}"
         response = self.client.get(url)
         data = response.json()
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(data["results"]), 3)
         names = set()
+        prices_sum = 0
         for result in data["results"]:
             self.assertEqual(result["relation_status"], "undefined")
-            self.assertEqual(len(result), 5)
+            self.assertEqual(len(result), 6)
             names.add(result["name"])
+            prices_sum += result["usd_price"]
         self.assertEqual(names, {"course_4", "course_5", "course_6"})
+        self.assertEqual(prices_sum, 199998)
 
     def test_course_forbidden_retrieve(self) -> None:
         """Тест запроса на отображение объекта модели Course пользователю, не имеющему права на просмотр"""
@@ -100,6 +108,7 @@ class CourseTestCase(APITestCase):
                 "lessons_count": 0,
                 "lessons_details": [],
                 "relation_status": "undefined",
+                "usd_price": 111111,
             },
         )
 
@@ -108,7 +117,9 @@ class CourseTestCase(APITestCase):
 
         course = Course.objects.get(name="course_10")
         url = f"/courses/{course.pk}/"
-        response = self.client.put(url, {"name": "updated_course", "description": "updated_description"})
+        response = self.client.put(
+            url, {"name": "updated_course", "description": "updated_description", "usd_price": 11111}
+        )
         data = response.json()
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
@@ -122,6 +133,7 @@ class CourseTestCase(APITestCase):
                 "lessons_count": 0,
                 "lessons_details": [],
                 "relation_status": "owner",
+                "usd_price": 11111,
             },
         )
 
@@ -145,6 +157,7 @@ class CourseTestCase(APITestCase):
                 "lessons_count": 0,
                 "lessons_details": [],
                 "relation_status": "undefined",
+                "usd_price": 88888,
             },
         )
 
