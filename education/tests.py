@@ -520,6 +520,7 @@ class PaymentTestCase(APITestCase):
         self.assertEqual(len(data["results"]), 1)
         self.assertEqual(data["results"][0]["amount"], 15000)
 
+
 class StripeSessionSubscriptionTestCase(APITestCase):
     """Группа тестов связанных с обработкой объектов моделей StripeSession и Subscription"""
 
@@ -599,7 +600,7 @@ class StripeSessionSubscriptionTestCase(APITestCase):
     def test_session_invalid_id(self) -> None:
         """Тест запроса без параметра session_id"""
 
-        url = f"/payment_success/?pk=1"
+        url = "/payment_success/?pk=1"
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data, {"error": "Параметр session_id не указан в url."})

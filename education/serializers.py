@@ -116,13 +116,14 @@ class SubscriptionSerializer(serializers.ModelSerializer):
     def get_payment_status(self, subscription: Subscription) -> bool:
         """Метод вычисления статуса оплаты подписки"""
 
-        return bool(subscription.course.course_payments.exists())
+        user = self.context["request"].user
+        return bool(Payment.objects.filter(stripe_product__course=subscription.course, payer=user).exists())
 
     def get_payment_amount(self, subscription: Subscription) -> int:
         """Метод вычисления общей суммы платежей пользователя по подписке"""
 
         user = self.context["request"].user
-        payments = subscription.course.course_payments.filter(payer=user)
+        payments = Payment.objects.filter(stripe_product__course=subscription.course, payer=user)
         return sum([payment.amount for payment in payments])
 
 

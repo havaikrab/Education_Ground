@@ -2,8 +2,6 @@ from django.contrib.auth.models import Group
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from config.test_data import set_subscriptions_data
-
 from .models import CustomUser
 
 
@@ -98,10 +96,19 @@ class CustomUserSpecialTestCase(APITestCase):
 class CustomUserTestCase(APITestCase):
     """Группа тестов связанных с обработкой объектов модели CustomUser"""
 
+    fixtures = [
+        "course_fixture.json",
+        "customuser_fixture.json",
+        "lesson_fixture.json",
+        "payment_fixture.json",
+        "stripeproduct_fixture.json",
+        "stripesession_fixture.json",
+        "subscription_fixture.json",
+    ]
+
     def setUp(self) -> None:
         """Наполнение БД тестовыми данными"""
 
-        set_subscriptions_data()
         self.moderators = Group.objects.create(name="Модераторы")
         self.user = CustomUser.objects.get(email="user_5@mail.py")
         self.user.set_password("password")
@@ -119,12 +126,19 @@ class CustomUserTestCase(APITestCase):
             if user["email"] == "user_5@mail.py":
                 self.assertEqual(len(user["payments"]), 4)
                 total_sum = sum([payment["amount"] for payment in user["payments"]])
-                self.assertEqual(total_sum, 3633)
-                for subscription in user["subscriptions"]:
-                    if subscription["course_name"] == "course_9":
-                        self.assertEqual(subscription["payment_amount"], 200)
-                    else:
-                        self.assertEqual(subscription["payment_amount"], 0)
+                self.assertEqual(total_sum, 46333)
+                self.assertEqual(
+                    user["subscriptions"],
+                    [
+                        {
+                            "course": 10,
+                            "course_name": "course_10",
+                            "course_preview": None,
+                            "payment_status": True,
+                            "payment_amount": 21111,
+                        }
+                    ],
+                )
             else:
                 not_exists = [user.get("last_name", True), user.get("payments", True), user.get("subscriptions", True)]
                 self.assertEqual(not_exists, [True, True, True])
