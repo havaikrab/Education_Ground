@@ -407,10 +407,7 @@ class StripeSessionRetrieveAPIView(generics.RetrieveAPIView):
 """,
         responses={
             200: OpenApiResponse(description='Возвращается "пустой" объект response.'),
-            400: OpenApiResponse(description="""
-- Маловероятное поступление некорректных данных от Stripe.
-- Передача злоумышленником данных с невалидной Stripe-подписью.
-"""),
+            400: OpenApiResponse(description="Передача данных с невалидной Stripe-подписью."),
             404: OpenApiResponse(
                 description="Курс не найден.",
             ),
@@ -430,8 +427,6 @@ class StripeWebhookAPIView(generics.CreateAPIView):
         sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
         try:
             event = Webhook.construct_event(payload, sig_header, STRIPE_WEBHOOK_SECRET)
-        except ValueError:
-            return Response({"error": "Некорректная структура данных."}, status=status.HTTP_400_BAD_REQUEST)
         except SignatureVerificationError:
             return Response({"error": "Невалидная Stripe-подпись."}, status=status.HTTP_400_BAD_REQUEST)
 

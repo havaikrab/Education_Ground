@@ -1,6 +1,7 @@
 from datetime import datetime
 from urllib.parse import urljoin
 
+from django.utils import timezone as django_tz
 from dotenv import load_dotenv
 from stripe import Event
 
@@ -67,19 +68,24 @@ def parse_webhook_event(event: Event) -> None:
     """Разбирает Stripe-Event объект и сохраняет основные данные в БД"""
 
     event_type = event.type
-    session_id = event.data.object.id
-    session = StripeSession.objects.select_related("customer", "product").get(session_id=session_id)
-    session.status = event.data.object.status
-    session.save()
-    if event_type == "checkout.session.completed":
-        customer = session.customer
-        paid_at = event.created
-        created_at = datetime.fromtimestamp(paid_at)
-        stripe_product = session.product
-        paid_amount = event.data.object.amount_total
-        Payment.objects.create(
-            payer=customer, created_at=created_at, stripe_product=stripe_product, amount=paid_amount, method="cashless"
-        )
-        product_type = event.data.object.metadata.product_type
-        if product_type == "course":
-            Subscription.objects.get_or_create(subscriber=customer, course=stripe_product.course)
+    if event_type in ["checkout.session.completed", "checkout.session.expired"]:
+        session_id = event.data.object.id
+        session = StripeSession.objects.select_related("customer", "product").get(session_id=session_id)
+        session.status = event.data.object.status
+        session.save()
+        if event_type == "checkout.session.completed":
+            customer = session.customer
+            paid_at = event.created
+            created_at = datetime.fromtimestamp(paid_at, tz=django_tz.UTC)  # type: ignore
+            stripe_product = session.product
+            paid_amount = event.data.object.amount_total
+            Payment.objects.create(
+                payer=customer,
+                created_at=created_at,
+                stripe_product=stripe_product,
+                amount=paid_amount,
+                method="cashless",
+            )
+            product_type = event.data.object.metadata.product_type
+            if product_type == "course":
+                Subscription.objects.get_or_create(subscriber=customer, course=stripe_product.course)

@@ -1,9 +1,14 @@
+import json
+from typing import Any
+from unittest.mock import patch
+
 from django.contrib.auth.models import Group
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
+from stripe import Event
 
-from education.models import Course, Lesson, StripeProduct, StripeSession, Subscription
+from education.models import Course, Lesson, Payment, StripeProduct, StripeSession, Subscription
 from users.models import CustomUser
 
 
@@ -663,3 +668,119 @@ class StripeSessionSubscriptionTestCase(APITestCase):
         url = f"/courses/{course.pk}/refuse/"
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class WebhookTestCase(APITestCase):
+    """Группа тестов для контроллера обработки вебхуков"""
+
+    fixtures = [
+        "course_fixture.json",
+        "customuser_fixture.json",
+        "lesson_fixture.json",
+        "payment_fixture.json",
+        "stripeproduct_fixture.json",
+        "stripesession_fixture.json",
+        "subscription_fixture.json",
+    ]
+
+    def setUp(self) -> None:
+        """Наполнение БД тестовыми данными"""
+
+        self.user = CustomUser.objects.get(email="user_5@mail.py")
+        self.client.force_authenticate(user=self.user)
+        self.payload = {
+            "id": "evt_test_event_id",
+            "type": "checkout.session.completed",
+            "created": 1783657036,
+            "data": {
+                "object": {
+                    "id": "cs_test_a12XCQTC6otGUIw17j5obwjYlWjW03pqrOmfr5Iji3UGHXHmYnxa521lZG",
+                    "status": "complete",
+                    "amount_total": 22222,
+                    "currency": "usd",
+                    "mode": "payment",
+                    "client_reference_id": "5",
+                    "metadata": {
+                        "product_type": "course",
+                        "product_id": "9",
+                    },
+                }
+            },
+        }
+
+    @patch("stripe.Webhook.construct_event")
+    def test_subscription_activating(self, mock_construct_event: Any) -> None:
+        """Тест активации подписки после совершения пользователем платежа"""
+
+        mock_event = Event.construct_from(self.payload, None)
+        mock_construct_event.return_value = mock_event
+
+        self.assertEqual(len(Payment.objects.all()), 10)
+        self.assertEqual(Subscription.objects.filter(subscriber=self.user, course__pk=9).exists(), False)
+        self.assertEqual(len(StripeSession.objects.all()), 3)
+        session = StripeSession.objects.get(
+            session_id="cs_test_a12XCQTC6otGUIw17j5obwjYlWjW03pqrOmfr5Iji3UGHXHmYnxa521lZG"
+        )
+        self.assertEqual(session.status, "open")
+        response = self.client.post(
+            "/webhook/",
+            data=json.dumps(self.payload),
+            content_type="application/json",
+            HTTP_STRIPE_SIGNATURE="test_signature",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(StripeSession.objects.all()), 3)
+        updated_session = StripeSession.objects.get(
+            session_id="cs_test_a12XCQTC6otGUIw17j5obwjYlWjW03pqrOmfr5Iji3UGHXHmYnxa521lZG"
+        )
+        self.assertEqual(updated_session.status, "complete")
+        self.assertEqual(len(Payment.objects.all()), 11)
+        new_payment = Payment.objects.get(created_at="2026-07-10 04:17:16+00:00")
+        self.assertEqual(new_payment.amount, 22222)
+        self.assertEqual(new_payment.payer, self.user)
+        self.assertEqual(new_payment.method, "cashless")
+        self.assertEqual(Subscription.objects.filter(subscriber=self.user, course__pk=9).exists(), True)
+
+    @patch("stripe.Webhook.construct_event")
+    def test_session_expired(self, mock_construct_event: Any) -> None:
+        """Тест смены статуса сессии на "expired" """
+
+        expired_payload = self.payload
+        expired_payload["type"] = "checkout.session.expired"
+        expired_payload["data"]["object"]["status"] = "expired"  # type: ignore
+        mock_event = Event.construct_from(expired_payload, None)
+        mock_construct_event.return_value = mock_event
+
+        self.assertEqual(len(Payment.objects.all()), 10)
+        self.assertEqual(Subscription.objects.filter(subscriber=self.user, course__pk=9).exists(), False)
+        self.assertEqual(len(StripeSession.objects.all()), 3)
+        session = StripeSession.objects.get(
+            session_id="cs_test_a12XCQTC6otGUIw17j5obwjYlWjW03pqrOmfr5Iji3UGHXHmYnxa521lZG"
+        )
+        self.assertEqual(session.status, "open")
+        response = self.client.post(
+            "/webhook/",
+            data=json.dumps(expired_payload),
+            content_type="application/json",
+            HTTP_STRIPE_SIGNATURE="test_signature",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(StripeSession.objects.all()), 3)
+        updated_session = StripeSession.objects.get(
+            session_id="cs_test_a12XCQTC6otGUIw17j5obwjYlWjW03pqrOmfr5Iji3UGHXHmYnxa521lZG"
+        )
+        self.assertEqual(updated_session.status, "expired")
+        self.assertEqual(len(Payment.objects.all()), 10)
+        self.assertEqual(Subscription.objects.filter(subscriber=self.user, course__pk=9).exists(), False)
+
+    def test_not_stripe_request(self) -> None:
+        """Тест запроса с невалидной Stripe-подписью"""
+
+        response = self.client.post(
+            "/webhook/",
+            data=json.dumps(self.payload),
+            content_type="application/json",
+            HTTP_STRIPE_SIGNATURE="test_signature",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, {"error": "Невалидная Stripe-подпись."})

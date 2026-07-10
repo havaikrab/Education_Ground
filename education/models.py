@@ -177,7 +177,7 @@ class Payment(models.Model):
     payer: models.ForeignKey = models.ForeignKey(
         CustomUser, on_delete=models.CASCADE, related_name="payments", verbose_name="Плательщик"
     )
-    created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True, verbose_name="Дата платежа")
+    created_at: models.DateTimeField = models.DateTimeField(verbose_name="Дата платежа")
     stripe_product: models.ForeignKey = models.ForeignKey(
         StripeProduct,
         null=True,
