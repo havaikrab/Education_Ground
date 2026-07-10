@@ -16,8 +16,10 @@ urlpatterns: list = [
     path("lessons/update/<int:pk>/", views.LessonUpdateAPIView.as_view(), name="lesson_update"),
     path("lessons/delete/<int:pk>/", views.LessonDestroyAPIView.as_view(), name="lesson_delete"),
     path("payments/", views.PaymentListAPIView.as_view(), name="payments"),
-    path("courses/<int:pk>/subscribe/", views.SubscriptionActivateAPIView.as_view(), name="subscribe"),
+    path("courses/<int:pk>/subscribe/", views.OpenStripeSessionAPIView.as_view(), name="subscribe"),
+    path("payment_success/", views.StripeSessionRetrieveAPIView.as_view(), name="payment_success"),
     path("courses/<int:pk>/refuse/", views.SubscriptionDeactivateAPIView.as_view(), name="refuse"),
+    path("webhook/", views.StripeWebhookAPIView.as_view(), name="webhook"),
 ]
 
 urlpatterns += router.urls

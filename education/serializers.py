@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Course, Lesson, Payment, Subscription
+from .models import Course, Lesson, Payment, StripeSession, Subscription
 from .validators import LinkValidator
 
 
@@ -8,7 +8,9 @@ class LessonSerializer(serializers.ModelSerializer):
     """Сериализатор модели урока"""
 
     description = serializers.CharField(validators=[LinkValidator(["youtube.com"])])
-    link_to_video = serializers.URLField(validators=[LinkValidator(["youtube.com"])])
+    link_to_video = serializers.URLField(
+        validators=[LinkValidator(["youtube.com"])], required=False, allow_blank=True, allow_null=True
+    )
 
     class Meta:
         """Параметры сериализатора"""
@@ -22,7 +24,7 @@ class LessonSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         user = self.context["request"].user
         has_subscription = Subscription.objects.filter(subscriber=user, course=instance.course).exists()
-        paid = Payment.objects.filter(payer=user, paid_lesson=instance).exists()
+        paid = Payment.objects.filter(payer=user, stripe_product__lesson=instance).exists()
         if (
             instance.course.owner != user
             and not user.groups.filter(name="Модераторы").exists()
@@ -51,6 +53,7 @@ class CourseSerializer(serializers.ModelSerializer):
             "name",
             "preview",
             "description",
+            "usd_price",
             "owner",
             "relation_status",
             "lessons_count",
@@ -113,11 +116,44 @@ class SubscriptionSerializer(serializers.ModelSerializer):
     def get_payment_status(self, subscription: Subscription) -> bool:
         """Метод вычисления статуса оплаты подписки"""
 
-        return bool(subscription.course.course_payments.exists())
+        user = self.context["request"].user
+        return bool(Payment.objects.filter(stripe_product__course=subscription.course, payer=user).exists())
 
     def get_payment_amount(self, subscription: Subscription) -> int:
         """Метод вычисления общей суммы платежей пользователя по подписке"""
 
         user = self.context["request"].user
-        payments = subscription.course.course_payments.filter(payer=user)
+        payments = Payment.objects.filter(stripe_product__course=subscription.course, payer=user)
         return sum([payment.amount for payment in payments])
+
+
+class StripeSessionSerializer(serializers.ModelSerializer):
+    """Сериализатор модели Stripe-сессии"""
+
+    product = serializers.SerializerMethodField()
+
+    class Meta:
+        """Параметры сериализатора"""
+
+        model = StripeSession
+        fields = "__all__"
+
+    def get_product(self, session: StripeSession) -> dict:
+        """Получение данных о продукте"""
+
+        product_type = None
+        product_id = None
+        if session.product.course:
+            product_type = "course"
+            product_id = session.product.course.pk
+        if session.product.lesson:
+            product_type = "lesson"
+            product_id = session.product.lesson.pk
+        product_name = session.product.product_name
+        product_price = session.product.product_price
+        return {
+            "product_type": product_type,
+            "product_id": product_id,
+            "product_name": product_name,
+            "product_price": product_price,
+        }

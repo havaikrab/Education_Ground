@@ -1,0 +1,182 @@
+[
+{
+    "model": "education.lesson",
+    "pk": 1,
+    "fields": {
+        "name": "lesson_1",
+        "description": "description of lesson_1",
+        "preview": "",
+        "link_to_video": "youtube.com/lesson_1",
+        "course": 1,
+        "usd_price": 15000
+    }
+},
+{
+    "model": "education.lesson",
+    "pk": 2,
+    "fields": {
+        "name": "lesson_2",
+        "description": "description of lesson_2",
+        "preview": "",
+        "link_to_video": "youtube.com/lesson_2",
+        "course": 2,
+        "usd_price": 14000
+    }
+},
+{
+    "model": "education.lesson",
+    "pk": 3,
+    "fields": {
+        "name": "lesson_3",
+        "description": "description of lesson_3",
+        "preview": "",
+        "link_to_video": "youtube.com/lesson_3",
+        "course": 2,
+        "usd_price": 13000
+    }
+},
+{
+    "model": "education.lesson",
+    "pk": 4,
+    "fields": {
+        "name": "lesson_4",
+        "description": "description of lesson_4",
+        "preview": "",
+        "link_to_video": "youtube.com/lesson_4",
+        "course": 3,
+        "usd_price": 12000
+    }
+},
+{
+    "model": "education.lesson",
+    "pk": 5,
+    "fields": {
+        "name": "lesson_5",
+        "description": "description of lesson_5",
+        "preview": "",
+        "link_to_video": "youtube.com/lesson_5",
+        "course": 3,
+        "usd_price": 11000
+    }
+},
+{
+    "model": "education.lesson",
+    "pk": 6,
+    "fields": {
+        "name": "lesson_6",
+        "description": "description of lesson_6",
+        "preview": "",
+        "link_to_video": "youtube.com/lesson_6",
+        "course": 3,
+        "usd_price": 10000
+    }
+},
+{
+    "model": "education.lesson",
+    "pk": 7,
+    "fields": {
+        "name": "lesson_7",
+        "description": "description of lesson_7",
+        "preview": "",
+        "link_to_video": "youtube.com/lesson_7",
+        "course": 5,
+        "usd_price": 9000
+    }
+},
+{
+    "model": "education.lesson",
+    "pk": 8,
+    "fields": {
+        "name": "lesson_8",
+        "description": "description of lesson_8",
+        "preview": "",
+        "link_to_video": "youtube.com/lesson_8",
+        "course": 6,
+        "usd_price": 8000
+    }
+},
+{
+    "model": "education.lesson",
+    "pk": 9,
+    "fields": {
+        "name": "lesson_9",
+        "description": "description of lesson_9",
+        "preview": "",
+        "link_to_video": "youtube.com/lesson_9",
+        "course": 6,
+        "usd_price": 7000
+    }
+},
+{
+    "model": "education.lesson",
+    "pk": 10,
+    "fields": {
+        "name": "lesson_10",
+        "description": "description of lesson_10",
+        "preview": "",
+        "link_to_video": "youtube.com/lesson_10",
+        "course": 7,
+        "usd_price": 6000
+    }
+},
+{
+    "model": "education.lesson",
+    "pk": 11,
+    "fields": {
+        "name": "lesson_11",
+        "description": "description of lesson_11",
+        "preview": "",
+        "link_to_video": "youtube.com/lesson_11",
+        "course": 7,
+        "usd_price": 5000
+    }
+},
+{
+    "model": "education.lesson",
+    "pk": 12,
+    "fields": {
+        "name": "lesson_12",
+        "description": "description of lesson_12",
+        "preview": "",
+        "link_to_video": "youtube.com/lesson_12",
+        "course": 7,
+        "usd_price": 4000
+    }
+},
+{
+    "model": "education.lesson",
+    "pk": 13,
+    "fields": {
+        "name": "lesson_13",
+        "description": "description of lesson_13",
+        "preview": "",
+        "link_to_video": "youtube.com/lesson_13",
+        "course": 9,
+        "usd_price": 3000
+    }
+},
+{
+    "model": "education.lesson",
+    "pk": 14,
+    "fields": {
+        "name": "lesson_14",
+        "description": "description of lesson_14",
+        "preview": "",
+        "link_to_video": "youtube.com/lesson_14",
+        "course": 10,
+        "usd_price": 2000
+    }
+},
+{
+    "model": "education.lesson",
+    "pk": 15,
+    "fields": {
+        "name": "lesson_15",
+        "description": "description of lesson_15",
+        "preview": "",
+        "link_to_video": "youtube.com/lesson_15",
+        "course": 10,
+        "usd_price": 1000
+    }
+}
+]
