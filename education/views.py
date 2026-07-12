@@ -15,7 +15,7 @@ from stripe import SignatureVerificationError, Webhook
 
 from config.settings import STRIPE_WEBHOOK_SECRET
 from users.models import CustomUser
-from users.permissions import IsCourseSubscriber, IsModerator, IsOwner
+from users.permissions import IsCourseSubscriber, IsLessonBuyer, IsModerator, IsOwner
 
 from .filters import CourseFilterSet, PaymentFilterSet
 from .models import Course, Lesson, Payment, StripeProduct, StripeSession, Subscription
@@ -196,7 +196,7 @@ class LessonRetrieveAPIView(generics.RetrieveAPIView):
 
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    permission_classes = [IsAuthenticated & (IsModerator | IsOwner)]
+    permission_classes = [IsAuthenticated & (IsModerator | IsOwner | IsLessonBuyer)]
 
 
 @method_decorator(
