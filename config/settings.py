@@ -25,9 +25,10 @@ INSTALLED_APPS = [
     "rest_framework",
     "django_filters",
     "rest_framework_simplejwt",
+    "drf_spectacular",
+    'django_celery_beat',
     "education",
     "users",
-    "drf_spectacular",
 ]
 
 MIDDLEWARE = [
@@ -134,3 +135,13 @@ SPECTACULAR_SETTINGS = {
 STRIPE_CLIENT = StripeClient(os.getenv("STRIPE_RESTRICTED_KEY", ""))
 
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
+
+REDIS_URL = "redis://" + os.getenv("REDIS_HOST", "127.0.0.1") + ":" + os.getenv("REDIS_PORT", "6379") + "/"
+
+CELERY_BROKER_DB = os.getenv("CELERY_BROKER_DB", "1")
+CELERY_BROKER_URL = f"{REDIS_URL}{CELERY_BROKER_DB}"
+CELERY_RESULT_DB = os.getenv("CELERY_RESULT_DB", "1")
+CELERY_RESULT_BACKEND = f"{REDIS_URL}{CELERY_RESULT_DB}"
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_TASK_TRACK_STARTED = os.getenv("CELERY_TASK_TRACK_STARTED", "true").lower() == "true"
+CELERY_TASK_TIME_LIMIT = int(os.getenv("CELERY_TASK_TIME_LIMIT", 1800))
