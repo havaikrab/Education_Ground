@@ -1,15 +1,17 @@
 from datetime import datetime
+from typing import Optional
 from urllib.parse import urljoin
 
+from django.db.models import Q
+from django.utils import timezone
 from django.utils import timezone as django_tz
-from dotenv import load_dotenv
 from stripe import Event
 
 from config.settings import CURRENT_SITE, STRIPE_CLIENT
 from education.models import Course, Lesson, Payment, StripeProduct, StripeSession, Subscription
 from users.models import CustomUser
 
-load_dotenv()
+from .tasks import send_notices
 
 
 def get_stripe_course_data(course: Course) -> dict:
@@ -89,3 +91,31 @@ def parse_webhook_event(event: Event) -> None:
             product_type = event.data.object.metadata.product_type
             if product_type == "course":
                 Subscription.objects.get_or_create(subscriber=customer, course=stripe_product.course)
+
+
+def manage_updating(course: Course, lesson: Optional[Lesson] = None, new_course: Optional[Course] = None) -> None:
+    """Проверяет дату последнего обновления курса и запускает рассылку уведомлений пользователям-подписчикам,
+    если курс был обновлен более 4-х часов назад"""
+
+    current_course_product = course.stripe_courses.get(is_active=True)  # type: ignore
+    hours_ago = (timezone.now() - current_course_product.created_at).total_seconds() / 3600
+    if hours_ago > 4:
+        if lesson:
+            message = f'Материалы урока "{lesson.name}" обновлены.'
+            if new_course:
+                recipients = CustomUser.objects.filter(
+                    Q(subscriptions__course=course)
+                    | Q(subscriptions__course=new_course)
+                    | Q(payments__stripe_product__lesson=lesson)
+                ).distinct()
+            else:
+                recipients = CustomUser.objects.filter(
+                    Q(subscriptions__course=course) | Q(payments__stripe_product__lesson=lesson)
+                ).distinct()
+        else:
+            recipients = CustomUser.objects.filter(subscriptions__course=course)
+            message = f'Материалы курса "{course.name}" обновлены.'
+        emails = [recipient.email for recipient in recipients]
+        send_notices.delay(emails, message)
+    stripe_data = get_stripe_course_data(course)
+    StripeProduct.objects.create(course=course, **stripe_data)

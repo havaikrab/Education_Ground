@@ -474,7 +474,7 @@ class LessonTestCase(APITestCase):
                 "usd_price": 888,
             },
         )
-        self.assertEqual(len(StripeProduct.objects.all()), 26)
+        self.assertEqual(len(StripeProduct.objects.all()), 27)
         self.assertEqual(len(StripeProduct.objects.filter(lesson=lesson)), 2)
         self.assertEqual(len(StripeProduct.objects.filter(lesson=lesson, is_active=True)), 1)
         old_product = StripeProduct.objects.get(pk=product_id)
