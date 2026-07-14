@@ -1,8 +1,11 @@
-from typing import Any
+from typing import Any, cast
 
+from django.utils import timezone
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from education.serializers import PaymentSerializer, SubscriptionSerializer
+from education.tasks import deactivate_forgotten_accounts
 
 from .models import CustomUser
 
@@ -115,3 +118,17 @@ class CustomUserChangePasswordSerializer(serializers.ModelSerializer):
         user.set_password(self.validated_data["new_password"])
         user.save()
         return user
+
+
+class AdvancedTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """Сериализатор, обновляющий дату последней авторизации пользователя"""
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, str]:
+        """Обновление поля last_login у объекта-пользователя после успешной авторизации"""
+
+        data = super().validate(attrs)
+        user = cast(CustomUser, self.user)
+        user.last_login = timezone.now()
+        user.save(update_fields=["last_login"])
+        deactivate_forgotten_accounts()
+        return data

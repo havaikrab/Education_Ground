@@ -1,4 +1,5 @@
 from django.contrib.auth.models import Group
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -46,9 +47,16 @@ class CustomUserSpecialTestCase(APITestCase):
                 "avatar": None,
             },
         )
+        today = str(timezone.now())[:10]
+        new_user = CustomUser.objects.get(email="test@user.py")
+        day_joined = str(new_user.date_joined)[:10]
+        self.assertEqual((new_user.last_login, day_joined), (None, today))
 
         login_url = "/users/login/"
         login_response = self.client.post(login_url, data={"email": "test@user.py", "password": "unusual_123"})
+        authorized_user = CustomUser.objects.get(email="test@user.py")
+        last_login = str(authorized_user.last_login)[:10]
+        self.assertEqual(last_login, today)
         user_access_token = login_response.data.get("access")
 
         authorized_response = self.client.get(list_users_url, headers={"Authorization": f"Bearer {user_access_token}"})

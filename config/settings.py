@@ -90,7 +90,7 @@ AUTH_USER_MODEL = "users.CustomUser"
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = os.getenv("LOCAL_TIME_ZONE", "UTC")
 
 USE_I18N = True
 
@@ -145,6 +145,13 @@ CELERY_RESULT_BACKEND = f"{REDIS_URL}{CELERY_RESULT_DB}"
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_TRACK_STARTED = os.getenv("CELERY_TASK_TRACK_STARTED", "true").lower() == "true"
 CELERY_TASK_TIME_LIMIT = int(os.getenv("CELERY_TASK_TIME_LIMIT", 1800))
+
+CELERY_BEAT_SCHEDULE = {
+    "deactivate_forgotten_accounts": {
+        "task": "education.tasks.deactivate_forgotten_accounts",
+        "schedule": timedelta(days=1),
+    }
+}
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
