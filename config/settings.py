@@ -25,9 +25,10 @@ INSTALLED_APPS = [
     "rest_framework",
     "django_filters",
     "rest_framework_simplejwt",
+    "drf_spectacular",
+    "django_celery_beat",
     "education",
     "users",
-    "drf_spectacular",
 ]
 
 MIDDLEWARE = [
@@ -89,7 +90,7 @@ AUTH_USER_MODEL = "users.CustomUser"
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = os.getenv("LOCAL_TIME_ZONE", "UTC")
 
 USE_I18N = True
 
@@ -134,3 +135,29 @@ SPECTACULAR_SETTINGS = {
 STRIPE_CLIENT = StripeClient(os.getenv("STRIPE_RESTRICTED_KEY", ""))
 
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
+
+REDIS_URL = "redis://" + os.getenv("REDIS_HOST", "127.0.0.1") + ":" + os.getenv("REDIS_PORT", "6379") + "/"
+
+CELERY_BROKER_DB = os.getenv("CELERY_BROKER_DB", "1")
+CELERY_BROKER_URL = f"{REDIS_URL}{CELERY_BROKER_DB}"
+CELERY_RESULT_DB = os.getenv("CELERY_RESULT_DB", "1")
+CELERY_RESULT_BACKEND = f"{REDIS_URL}{CELERY_RESULT_DB}"
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_TASK_TRACK_STARTED = os.getenv("CELERY_TASK_TRACK_STARTED", "true").lower() == "true"
+CELERY_TASK_TIME_LIMIT = int(os.getenv("CELERY_TASK_TIME_LIMIT", 1800))
+
+CELERY_BEAT_SCHEDULE = {
+    "deactivate_forgotten_accounts": {
+        "task": "education.tasks.deactivate_forgotten_accounts",
+        "schedule": timedelta(days=1),
+    }
+}
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", 587))
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True").lower() == "true"
+EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "False").lower() == "true"
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+SENDING_INTERVAL = int(os.getenv("SENDING_INTERVAL", 300))

@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 from django.contrib.auth.models import Group
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 from stripe import Event
@@ -251,7 +252,14 @@ class CourseTestCase(APITestCase):
 class LessonTestCase(APITestCase):
     """Группа тестов связанных с обработкой объектов модели Lesson"""
 
-    fixtures = ["course_fixture.json", "customuser_fixture.json", "lesson_fixture.json", "stripeproduct_fixture.json"]
+    fixtures = [
+        "course_fixture.json",
+        "customuser_fixture.json",
+        "lesson_fixture.json",
+        "payment_fixture.json",
+        "stripeproduct_fixture.json",
+        "subscription_fixture.json",
+    ]
 
     def setUp(self) -> None:
         """Наполнение БД тестовыми данными"""
@@ -340,7 +348,7 @@ class LessonTestCase(APITestCase):
             lesson = data["results"][i]
             description = lesson.get("description")
             link = lesson.get("link_to_video")
-            if i not in [6, 7, 8]:
+            if i not in [0, 6, 7, 8]:
                 self.assertEqual((description, link), (None, None))
             else:
                 self.assertEqual(
@@ -378,6 +386,58 @@ class LessonTestCase(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_getting_lesson_access_by_payment(self) -> None:
+        """Тест получения доступа к материалам урока после оплаты"""
+
+        lesson = Lesson.objects.get(name="lesson_6")
+        url = f"/lessons/{lesson.pk}/"
+        forbidden_response = self.client.get(url)
+        self.assertEqual(forbidden_response.status_code, status.HTTP_403_FORBIDDEN)
+        lesson_product = StripeProduct.objects.get(lesson=lesson, is_active=True)
+        Payment.objects.create(
+            payer=self.user, created_at=timezone.now(), stripe_product=lesson_product, amount=10000, method="cash"
+        )
+        success_response = self.client.get(url)
+        self.assertEqual(success_response.status_code, status.HTTP_200_OK)
+        data = success_response.json()
+        self.assertEqual(
+            data,
+            {
+                "id": 6,
+                "name": "lesson_6",
+                "description": "description of lesson_6",
+                "preview": None,
+                "link_to_video": "youtube.com/lesson_6",
+                "course": 3,
+                "usd_price": 10000,
+            },
+        )
+
+    def test_getting_lesson_access_by_subscription(self) -> None:
+        """Тест получения доступа к материалам урока после подписки на курс"""
+
+        lesson = Lesson.objects.get(name="lesson_6")
+        url = f"/lessons/{lesson.pk}/"
+        forbidden_response = self.client.get(url)
+        self.assertEqual(forbidden_response.status_code, status.HTTP_403_FORBIDDEN)
+        course = Course.objects.get(name="course_3")
+        Subscription.objects.create(course=course, subscriber=self.user)
+        success_response = self.client.get(url)
+        self.assertEqual(success_response.status_code, status.HTTP_200_OK)
+        data = success_response.json()
+        self.assertEqual(
+            data,
+            {
+                "id": 6,
+                "name": "lesson_6",
+                "description": "description of lesson_6",
+                "preview": None,
+                "link_to_video": "youtube.com/lesson_6",
+                "course": 3,
+                "usd_price": 10000,
+            },
+        )
+
     def test_lesson_updating_by_moderator(self) -> None:
         """Тест запроса на изменение объекта модели Lesson пользователем-модератором"""
 
@@ -414,7 +474,7 @@ class LessonTestCase(APITestCase):
                 "usd_price": 888,
             },
         )
-        self.assertEqual(len(StripeProduct.objects.all()), 26)
+        self.assertEqual(len(StripeProduct.objects.all()), 27)
         self.assertEqual(len(StripeProduct.objects.filter(lesson=lesson)), 2)
         self.assertEqual(len(StripeProduct.objects.filter(lesson=lesson, is_active=True)), 1)
         old_product = StripeProduct.objects.get(pk=product_id)

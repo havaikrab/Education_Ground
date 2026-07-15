@@ -15,7 +15,7 @@ from stripe import SignatureVerificationError, Webhook
 
 from config.settings import STRIPE_WEBHOOK_SECRET
 from users.models import CustomUser
-from users.permissions import IsCourseSubscriber, IsModerator, IsOwner
+from users.permissions import IsCourseSubscriber, IsLessonBuyer, IsModerator, IsOwner
 
 from .filters import CourseFilterSet, PaymentFilterSet
 from .models import Course, Lesson, Payment, StripeProduct, StripeSession, Subscription
@@ -25,6 +25,7 @@ from .services import (
     get_stripe_course_data,
     get_stripe_lesson_data,
     get_stripe_session,
+    manage_updating,
     parse_webhook_event,
     update_stripe_session_status,
 )
@@ -93,11 +94,9 @@ class CourseViewSet(ModelViewSet):
         StripeProduct.objects.create(course=course, **stripe_data)
 
     def perform_update(self, serializer: BaseSerializer) -> None:
-        """Создает новый актуальный Stripe-продукт при обновлении курса"""
 
         course = serializer.save()
-        stripe_data = get_stripe_course_data(course)
-        StripeProduct.objects.create(course=course, **stripe_data)
+        manage_updating(course)
 
     def get_permissions(self) -> Sequence:
         """Определение разрешений на использование функциональности контроллера"""
@@ -196,7 +195,7 @@ class LessonRetrieveAPIView(generics.RetrieveAPIView):
 
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    permission_classes = [IsAuthenticated & (IsModerator | IsOwner)]
+    permission_classes = [IsAuthenticated & (IsModerator | IsOwner | IsLessonBuyer)]
 
 
 @method_decorator(
@@ -253,12 +252,17 @@ class LessonUpdateAPIView(generics.UpdateAPIView):
         """Запрет присваивать обновляемый урок чужому курсу"""
 
         lesson = self.get_object()
-        course = serializer.validated_data.get("course")
-        if isinstance(course, Course) and lesson.course.owner != course.owner:
+        current_course = lesson.course
+        new_course = serializer.validated_data.get("course")
+        if isinstance(new_course, Course) and current_course.owner != new_course.owner:
             raise PermissionDenied("У изменяемого урока и указанного курса должен быть один и тот же владелец")
         updated_lesson = serializer.save()
         stripe_data = get_stripe_lesson_data(updated_lesson)
         StripeProduct.objects.create(lesson=updated_lesson, **stripe_data)
+        if new_course is not None:
+            manage_updating(current_course, lesson=lesson, new_course=new_course)
+        else:
+            manage_updating(current_course, lesson=lesson)
 
 
 @method_decorator(

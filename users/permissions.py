@@ -4,7 +4,7 @@ from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
 from rest_framework.views import APIView
 
-from education.models import Course, Lesson, Subscription
+from education.models import Course, Lesson, Payment, Subscription
 from users.models import CustomUser
 
 
@@ -48,3 +48,17 @@ class IsCourseSubscriber(BasePermission):
 
         user = request.user
         return Subscription.objects.filter(subscriber=user, course=course).exists()
+
+
+class IsLessonBuyer(BasePermission):
+    """Разрешение для пользователя, оплатившего урок"""
+
+    message = "Доступ ограничен. Вы не оплачивали данный урок."
+
+    def has_object_permission(self, request: Request, view: APIView, lesson: Lesson) -> bool:
+        """Проверка наличия у пользователя подписки на курс или оплаты за данный урок"""
+
+        user = request.user
+        is_subscribed = Subscription.objects.filter(subscriber=user, course=lesson.course).exists()
+        is_paid = Payment.objects.filter(payer=user, stripe_product__lesson=lesson).exists()
+        return is_subscribed or is_paid
