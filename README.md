@@ -15,6 +15,7 @@ stripe listen --forward-to http://localhost:8000/webhook/
 
 Запуск с Docker:  
 Заполнить файл .env в соответствии с шаблоном .env_template
-Для использования в режиме DEBUG утилиты stripe-cli указывать при запуске флаг --profile stripe-cli  
-Например docker-compose --profile stripe-cli up  
+Для использования в режиме DEBUG утилиты stripe-cli нужно указывать при запуске флаг --profile stripe-cli,
+а также добавлять флаг --force-recreate
+Пример полной команды: docker-compose --profile stripe-cli up --force-recreate
 Для стандартного запуска используется команда docker-compose up  

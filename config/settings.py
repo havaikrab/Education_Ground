@@ -13,7 +13,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", get_random_secret_key())
 
 DEBUG = os.getenv("DEBUG").lower() == "true"
 
-ALLOWED_HOSTS: list = []
+ALLOWED_HOSTS: list = ['localhost', '127.0.0.1', 'web']
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -63,11 +63,11 @@ WSGI_APPLICATION = "config.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
-        "NAME": os.getenv("DB_NAME"),
-        "USER": os.getenv("DB_USER"),
-        "PASSWORD": os.getenv("DB_PASSWORD"),
-        "HOST": os.getenv("DB_HOST"),
-        "PORT": os.getenv("DB_PORT"),
+        "NAME": os.getenv("DB_NAME", "postgres"),
+        "USER": os.getenv("DB_USER", "postgres"),
+        "PASSWORD": os.getenv("DB_PASSWORD", ""),
+        "HOST": "db",
+        "PORT": "5432",
     }
 }
 
@@ -137,12 +137,10 @@ STRIPE_CLIENT = StripeClient(os.getenv("STRIPE_RESTRICTED_KEY", ""))
 
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 
-REDIS_URL = "redis://" + os.getenv("REDIS_HOST", "127.0.0.1") + ":" + os.getenv("REDIS_PORT", "6379") + "/"
+REDIS_URL = "redis://redis:6379/"
 
-CELERY_BROKER_DB = os.getenv("CELERY_BROKER_DB", "1")
-CELERY_BROKER_URL = f"{REDIS_URL}{CELERY_BROKER_DB}"
-CELERY_RESULT_DB = os.getenv("CELERY_RESULT_DB", "1")
-CELERY_RESULT_BACKEND = f"{REDIS_URL}{CELERY_RESULT_DB}"
+CELERY_BROKER_URL = "redis://redis:6379/1"
+CELERY_RESULT_BACKEND = "redis://redis:6379/2"
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_TRACK_STARTED = os.getenv("CELERY_TASK_TRACK_STARTED", "true").lower() == "true"
 CELERY_TASK_TIME_LIMIT = int(os.getenv("CELERY_TASK_TIME_LIMIT", 1800))

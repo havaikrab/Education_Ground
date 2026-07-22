@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # 2. Создаем папки для медиа и статики
 RUN mkdir -p /app/media
-RUN mkdir -p /app/static
+RUN mkdir -p /app/staticfiles
 
 # 3. Устанавливаем Poetry
 RUN pip install --no-cache-dir poetry
@@ -29,11 +29,5 @@ COPY . .
 # 7. Собираем статику
 RUN python manage.py collectstatic --noinput
 
-# 8. Создаем и применяем миграции
-RUN python manage.py makemigrations
-RUN python manage.py migrate
-
+# 8. Пробрасываем порты
 EXPOSE 8000
-
-# 9. Запускаем сервер
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

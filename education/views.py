@@ -3,6 +3,7 @@ from typing import Any, Sequence, cast
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
@@ -418,6 +419,7 @@ class StripeSessionRetrieveAPIView(generics.RetrieveAPIView):
         },
     ),
 )
+@method_decorator(csrf_exempt, name='dispatch')
 class StripeWebhookAPIView(generics.CreateAPIView):
     """Контроллер автоматической обработки вебхуков"""
 
