@@ -1,0 +1,39 @@
+FROM python:3.13-slim
+
+WORKDIR /app
+
+# 1. Системные зависимости
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libpq-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# 2. Создаем папки для медиа и статики
+RUN mkdir -p /app/media
+RUN mkdir -p /app/static
+
+# 3. Устанавливаем Poetry
+RUN pip install --no-cache-dir poetry
+
+# 4. Копируем ТОЛЬКО файлы зависимостей
+COPY pyproject.toml poetry.lock ./
+
+# 5. Устанавливаем зависимости без создания виртуального окружения
+RUN poetry config virtualenvs.create false && \
+    poetry install --no-interaction --no-ansi --no-root
+
+# 6. Копируем ВЕСЬ код после установки зависимостей
+COPY . .
+
+# 7. Собираем статику
+RUN python manage.py collectstatic --noinput
+
+# 8. Создаем и применяем миграции
+RUN python manage.py makemigrations
+RUN python manage.py migrate
+
+EXPOSE 8000
+
+# 9. Запускаем сервер
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
