@@ -11,3 +11,10 @@ https://github.com/stripe/stripe-cli/releases/tag/v1.43.7
 stripe listen --forward-to http://localhost:8000/webhook/  
 При успешном запуске stripe-cli покажет секретный ключ, разработчику необходимо удостовериться,
 что полученный ключ совпадает с переменной STRIPE_WEBHOOK_SECRET в файле .env .  
+
+
+Запуск с Docker:  
+Заполнить файл .env в соответствии с шаблоном .env_template
+Для использования в режиме DEBUG утилиты stripe-cli указывать при запуске флаг --profile stripe-cli  
+Например docker-compose --profile stripe-cli up  
+Для стандартного запуска используется команда docker-compose up  

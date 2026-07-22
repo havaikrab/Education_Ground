@@ -1,7 +1,7 @@
 import os
 from datetime import timedelta
 from pathlib import Path
-
+from django.core.management.utils import get_random_secret_key
 from dotenv import load_dotenv
 from stripe import StripeClient
 
@@ -9,9 +9,9 @@ load_dotenv(override=True)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = os.getenv("SECRET_KEY", get_random_secret_key())
 
-DEBUG = True
+DEBUG = os.getenv("DEBUG").lower() == "true"
 
 ALLOWED_HOSTS: list = []
 
