@@ -23,6 +23,8 @@ dependencies = [
     "eventlet (>=0.41.0,<0.42.0)",
     "django-celery-beat (>=2.9.0,<3.0.0)",
     "redis (>=8.0.1,<9.0.0)",
+    "gunicorn (>=26.0.0,<27.0.0)",
+    "flake8 (>=7.3.0,<8.0.0)",
 ]
 
 
@@ -34,7 +36,6 @@ build-backend = "poetry.core.masonry.api"
 lint = [
     "isort (>=8.0.1,<9.0.0)",
     "black (>=26.5.1,<27.0.0)",
-    "flake8 (>=7.3.0,<8.0.0)",
     "mypy (>=2.1.0,<3.0.0)",
     "django-stubs (>=6.0.5,<7.0.0)",
     "djangorestframework-stubs (>=3.17.0,<4.0.0)",
@@ -64,3 +65,15 @@ venv
 disallow_untyped_defs = true
 warn_return_any = true
 exclude_gitignore = true
+
+[tool.coverage.run]
+source = ["."]
+omit = [
+    "*/tests/*",
+    "*/migrations/*",
+    "*/admin.py",
+    "*/apps.py",
+    "manage.py",
+    "*/wsgi.py",
+    "*/asgi.py",
+]
