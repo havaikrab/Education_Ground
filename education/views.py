@@ -419,7 +419,7 @@ class StripeSessionRetrieveAPIView(generics.RetrieveAPIView):
         },
     ),
 )
-@method_decorator(csrf_exempt, name='dispatch')
+@method_decorator(csrf_exempt, name="dispatch")
 class StripeWebhookAPIView(generics.CreateAPIView):
     """Контроллер автоматической обработки вебхуков"""
 
