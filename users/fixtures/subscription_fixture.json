@@ -1,0 +1,18 @@
+[
+{
+    "model": "education.subscription",
+    "pk": 1,
+    "fields": {
+        "subscriber": 5,
+        "course": 10
+    }
+},
+{
+    "model": "education.subscription",
+    "pk": 2,
+    "fields": {
+        "subscriber": 1,
+        "course": 9
+    }
+}
+]
