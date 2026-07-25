@@ -10,8 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # 2. Создаем папки для медиа и статики
-RUN mkdir -p /app/media
-RUN mkdir -p /app/staticfiles
+RUN mkdir -p /app/media && mkdir -p /app/staticfiles
 
 # 3. Устанавливаем Poetry
 RUN pip install --no-cache-dir poetry

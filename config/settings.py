@@ -2,7 +2,6 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
-from django.core.management.utils import get_random_secret_key
 from dotenv import load_dotenv
 from stripe import StripeClient
 
@@ -10,7 +9,9 @@ load_dotenv(override=True)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv("SECRET_KEY", get_random_secret_key())
+TEST_MODE = os.getenv("TEST_MODE", "False").lower() == "true"
+
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 DEBUG = os.getenv("DEBUG", "").lower() == "true"
 
@@ -163,3 +164,20 @@ EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 SENDING_INTERVAL = int(os.getenv("SENDING_INTERVAL", 300))
 
 CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
+
+if TEST_MODE:
+    SECRET_KEY = "django-secret_test_key"
+    DEBUG = True
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql_psycopg2",
+            "NAME": "test_db",
+            "USER": "test_user",
+            "PASSWORD": "test_password",
+            "HOST": "test_db",
+            "PORT": "5432",
+        }
+    }
+    EMAIL_HOST_USER = "test@mail.com"
+    EMAIL_HOST_PASSWORD = "test_email_password"
+    SENDING_INTERVAL = 1

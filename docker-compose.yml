@@ -66,18 +66,7 @@ services:
             redis:
                 condition: service_healthy
         command: >
-            bash -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
-    stripe:
-        image: stripe/stripe-cli:latest
-        command: listen --forward-to http://web:8000/webhook/ --skip-verify
-        environment:
-            - STRIPE_API_KEY=${STRIPE_RESTRICTED_KEY}
-        depends_on:
-            web:
-                condition: service_started
-        restart: unless-stopped
-        profiles:
-            - stripe-cli
+            bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
 volumes:
     postgres_data:
     static_volume:

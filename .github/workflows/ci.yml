@@ -1,0 +1,80 @@
+name: Education Ground CI
+
+on: [push, pull_request]
+
+jobs:
+    lint:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Check Out Code
+              uses: actions/checkout@v3
+
+            - name: Set Up Python
+              uses: actions/setup-python@v4
+              with:
+                  python-version: '3.12'
+
+            - name: Install Dependencies
+              run: pip install flake8
+
+            - name: Run Flake8
+              run: flake8 .
+
+    test:
+        needs: lint
+        runs-on: ubuntu-latest
+        steps:
+          - name: Check Out Code
+            uses: actions/checkout@v3
+
+          - name: Set Up Python
+            uses: actions/setup-python@v4
+            with:
+                python-version: '3.12'
+
+          - name: Install Dependencies
+            run: |
+                pip install poetry
+                poetry install
+
+          - name: Run Tests
+            run: poetry run python manage.py test
+
+    build:
+        needs: test
+        runs-on: ubuntu-latest
+        services:
+            redis:
+                image: redis:latest
+                options: >-
+                  --health-cmd "redis-cli ping"
+                  --health-interval 10s
+                  --health-timeout 5s
+                  --health-retries 5
+            db:
+                image: postgres:16
+                env:
+                    POSTGRES_DB: test_db
+                    POSTGRES_USER: test_user
+                    POSTGRES_PASSWORD: test_password
+                options: >-
+                  --health-cmd "pg_isready -U test_user"
+                  --health-interval 10s
+                  --health-timeout 5s
+                  --health-retries 5
+        steps:
+        - name: Check Out Code
+          uses: actions/checkout@v3
+
+#        - name: Set Up Python
+#          uses: actions/setup-python@v4
+#          with:
+#            python-version: '3.12'
+#
+#        - name: Install Dependencies
+#          run: |
+#            pip install poetry
+#            poetry install
+#
+#        - name: Run Tests
+#          run: poetry run python manage.py test
