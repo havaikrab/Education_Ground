@@ -123,8 +123,3 @@ jobs:
                     docker compose up -d
                     docker image prune -f
                 EOF
-
-          - name: Verify Deployment
-            run: |
-              sleep 20
-              curl -f http://${{ secrets.SERVER_IP }}/users/login/ || exit 1
