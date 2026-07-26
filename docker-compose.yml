@@ -53,7 +53,7 @@ services:
         env_file:
             - .env
         volumes:
-            - static_volume:/app/static
+            - static_volume:/app/staticfiles
             - media_volume:/app/media
         depends_on:
             db:
