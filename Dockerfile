@@ -25,8 +25,5 @@ RUN poetry config virtualenvs.create false && \
 # 6. Копируем ВЕСЬ код после установки зависимостей
 COPY . .
 
-# 7. Собираем статику
-RUN python manage.py collectstatic --noinput
-
-# 8. Пробрасываем порты
+# 7. Пробрасываем порты
 EXPOSE 8000
