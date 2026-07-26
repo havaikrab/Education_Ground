@@ -64,6 +64,7 @@ jobs:
             run: |
                 echo "TEST_MODE=True" >> .env
                 echo "CSRF_TRUSTED_ORIGINS=http://localhost,http://127.0.0.1" >> .env
+                echo "STRIPE_RESTRICTED_KEY=${{ secrets.STRIPE_RESTRICTED_KEY }}" >> .env
 
           - name: Start Celery Worker
             env:
