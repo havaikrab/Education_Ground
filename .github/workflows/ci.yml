@@ -95,7 +95,7 @@ jobs:
             run: echo ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }} | docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
 
           - name: Build Docker Image
-            run: docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/education-ground:${{ github.sha }} .
+            run: docker build --no-cache -t ${{ secrets.DOCKER_HUB_USERNAME }}/education-ground:${{ github.sha }} .
 
           - name: Push Docker Image To Docker Hub
             run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/education-ground:${{ github.sha }}
@@ -119,3 +119,8 @@ jobs:
                     docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/education-ground:${{ github.sha }}
                     docker compose up -d
                 EOF
+
+          - name: Verify Deployment
+            run: |
+              sleep 10
+              curl -f http://${{ secrets.SERVER_IP }} || exit 1
