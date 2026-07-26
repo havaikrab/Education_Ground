@@ -178,6 +178,8 @@ if TEST_MODE:
             "PORT": "5432",
         }
     }
+    CELERY_BROKER_URL = "redis://localhost:6379/1"
+    CELERY_RESULT_BACKEND = "redis://localhost:6379/2"
     EMAIL_HOST_USER = "test@mail.com"
     EMAIL_HOST_PASSWORD = "test_email_password"
     SENDING_INTERVAL = 1
