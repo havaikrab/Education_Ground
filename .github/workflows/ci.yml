@@ -98,7 +98,7 @@ jobs:
             run: ls -la
 
           - name: Build Docker Image
-            run: docker build --no-cache -t ${{ secrets.DOCKER_HUB_USERNAME }}/education-ground:${{ github.sha }} .
+            run: docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/education-ground:${{ github.sha }} .
 
           - name: Push Docker Image To Docker Hub
             run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/education-ground:${{ github.sha }}
@@ -126,5 +126,5 @@ jobs:
 
           - name: Verify Deployment
             run: |
-              sleep 10
+              sleep 30
               curl -f http://${{ secrets.SERVER_IP }} || exit 1
