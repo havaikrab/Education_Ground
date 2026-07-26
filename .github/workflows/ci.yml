@@ -114,7 +114,8 @@ jobs:
                 ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
                     cd education-ground
                     docker compose down
-                    export IMAGE_NAME=${{ secrets.DOCKER_HUB_USERNAME }}/education-ground:${{ github.sha }}
+                    sed -i '/^IMAGE_NAME=/d' .env
+                    echo "IMAGE_NAME=${{ secrets.DOCKER_HUB_USERNAME }}/education-ground:${{ github.sha }}" >> .env
                     docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/education-ground:${{ github.sha }}
                     docker compose up -d
                 EOF
