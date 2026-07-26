@@ -23,26 +23,6 @@ jobs:
     test:
         needs: lint
         runs-on: ubuntu-latest
-        steps:
-          - name: Check Out Code
-            uses: actions/checkout@v3
-
-          - name: Set Up Python
-            uses: actions/setup-python@v4
-            with:
-                python-version: '3.12'
-
-          - name: Install Dependencies
-            run: |
-                pip install poetry
-                poetry install
-
-          - name: Run Tests
-            run: poetry run python manage.py test
-
-    build:
-        needs: test
-        runs-on: ubuntu-latest
         services:
             redis:
                 image: redis:latest
@@ -63,18 +43,71 @@ jobs:
                   --health-timeout 5s
                   --health-retries 5
         steps:
-        - name: Check Out Code
-          uses: actions/checkout@v3
+          - name: Check Out Code
+            uses: actions/checkout@v3
 
-#        - name: Set Up Python
-#          uses: actions/setup-python@v4
-#          with:
-#            python-version: '3.12'
-#
-#        - name: Install Dependencies
-#          run: |
-#            pip install poetry
-#            poetry install
-#
-#        - name: Run Tests
-#          run: poetry run python manage.py test
+          - name: Set Up Python
+            uses: actions/setup-python@v4
+            with:
+                python-version: '3.12'
+                cache: 'poetry'
+
+          - name: Install Poetry
+            run: pip install poetry
+
+          - name: Install Dependencies
+            run: poetry install
+
+          - name: Create .env For Tests
+            run: |
+                echo "TEST_MODE=True" >> .env
+
+          - name: Start Celery Worker
+            env:
+                DJANGO_SETTINGS_MODULE: config.settings
+            run: poetry run celery -A config worker --loglevel=info &
+
+          - name: Wait For Celery Start
+            run: sleep 10
+
+          - name: Run Migrations
+            run: poetry run python manage.py migrate
+
+          - name: Run Tests
+            run: poetry run python manage.py test
+            env:
+                TEST_MODE: True
+
+    build:
+        needs: test
+        runs-on: ubuntu-latest
+        steps:
+          - name: Check Out Code
+            uses: actions/checkout@v3
+
+          - name: Log In To Docker Hub
+            run: echo ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }} | docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
+
+          - name: Build Docker Image
+            run: docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/Education_Ground:${{ github.sha }} .
+
+          - name: Push Docker Image To Docker Hub
+            run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/Education_Ground:${{ github.sha }}
+
+    deploy:
+        needs: build
+        runs-on: ubuntu-latest
+        steps:
+          - name: Set Up SSH
+            uses: webfactory/ssh-agent@v0.8.1
+            with:
+              ssh-private-key: ${{ secrets.SSH_KEY }}
+
+          - name: Deploy To Server
+            run: |
+                ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+                    docker compose down
+                    export IMAGE_NAME=${{ secrets.DOCKER_HUB_USERNAME }}/Education_Ground:${{ github.sha }}
+                    docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/Education_Ground:${{ github.sha }}
+                    docker compose up -d
+                EOF

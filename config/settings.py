@@ -174,7 +174,7 @@ if TEST_MODE:
             "NAME": "test_db",
             "USER": "test_user",
             "PASSWORD": "test_password",
-            "HOST": "test_db",
+            "HOST": "db",
             "PORT": "5432",
         }
     }
