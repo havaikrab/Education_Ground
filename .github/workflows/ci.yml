@@ -118,6 +118,7 @@ jobs:
                     echo "IMAGE_NAME=${{ secrets.DOCKER_HUB_USERNAME }}/education-ground:${{ github.sha }}" >> .env
                     docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/education-ground:${{ github.sha }}
                     docker compose up -d
+                    docker image prune -f
                 EOF
 
           - name: Verify Deployment
