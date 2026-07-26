@@ -23,7 +23,7 @@ services:
             retries: 5
         restart: unless-stopped
     celery_worker:
-        build: .
+        image: ${IMAGE_NAME}
         command: celery -A config worker --loglevel=info
         environment:
             - DJANGO_SETTINGS_MODULE=config.settings
@@ -36,7 +36,7 @@ services:
                 condition: service_healthy
         restart: unless-stopped
     celery_beat:
-        build: .
+        image: ${IMAGE_NAME}
         command: celery -A config beat --loglevel=info
         environment:
             - DJANGO_SETTINGS_MODULE=config.settings
