@@ -1,7 +1,7 @@
 import os
 from datetime import timedelta
 from pathlib import Path
-from django.core.management.utils import get_random_secret_key
+
 from dotenv import load_dotenv
 from stripe import StripeClient
 
@@ -9,11 +9,13 @@ load_dotenv(override=True)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv("SECRET_KEY", get_random_secret_key())
+TEST_MODE = os.getenv("TEST_MODE", "False").lower() == "true"
 
-DEBUG = os.getenv("DEBUG").lower() == "true"
+SECRET_KEY = os.getenv("SECRET_KEY")
 
-ALLOWED_HOSTS: list = ['localhost', '127.0.0.1', 'web']
+DEBUG = os.getenv("DEBUG", "").lower() == "true"
+
+ALLOWED_HOSTS: list = ["*"]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -66,8 +68,8 @@ DATABASES = {
         "NAME": os.getenv("DB_NAME", "postgres"),
         "USER": os.getenv("DB_USER", "postgres"),
         "PASSWORD": os.getenv("DB_PASSWORD", ""),
-        "HOST": "db",
-        "PORT": "5432",
+        "HOST": os.getenv("DB_HOST", "db"),
+        "PORT": os.getenv("DB_PORT", "5432"),
     }
 }
 
@@ -98,7 +100,7 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = (BASE_DIR / "static",)
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
@@ -160,3 +162,24 @@ EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "False").lower() == "true"
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 SENDING_INTERVAL = int(os.getenv("SENDING_INTERVAL", 300))
+
+CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
+
+if TEST_MODE:
+    SECRET_KEY = "django-secret_test_key"
+    DEBUG = True
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql_psycopg2",
+            "NAME": "test_db",
+            "USER": "test_user",
+            "PASSWORD": "test_password",
+            "HOST": "localhost",
+            "PORT": "5432",
+        }
+    }
+    CELERY_BROKER_URL = "redis://localhost:6379/1"
+    CELERY_RESULT_BACKEND = "redis://localhost:6379/2"
+    EMAIL_HOST_USER = "test@mail.com"
+    EMAIL_HOST_PASSWORD = "test_email_password"
+    SENDING_INTERVAL = 1
